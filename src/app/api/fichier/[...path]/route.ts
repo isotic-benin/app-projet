@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { get } from '@vercel/blob';
 import { extname } from 'path';
 
+export const dynamic = 'force-dynamic';
+
 const MIME_TYPES: Record<string, string> = {
     '.pdf': 'application/pdf',
     '.jpg': 'image/jpeg',
