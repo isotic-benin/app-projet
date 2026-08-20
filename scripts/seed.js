@@ -77,7 +77,7 @@ var dotenv = __importStar(require("dotenv"));
 var crypto_1 = __importDefault(require("crypto"));
 dotenv.config({ path: '.env.local' });
 var MONGODB_URI = process.env.MONGODB_URI;
-var DB_NAME = 'microfinance';
+var DB_NAME = 'altiafinance';
 function generateClientNumber(index) {
     return "CL-2026-".concat(String(index).padStart(6, '0'));
 }

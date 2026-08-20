@@ -8,7 +8,7 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 const MONGODB_URI = process.env.MONGODB_URI!;
-const DB_NAME = 'microfinance';
+const DB_NAME = 'altiafinance';
 
 async function setup() {
     console.log('🔌 Connecting to MongoDB...');

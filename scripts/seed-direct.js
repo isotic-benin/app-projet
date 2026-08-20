@@ -2,7 +2,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const crypto = require('crypto');
 
 const MONGODB_URI = 'mongodb://localhost:27017/cred';
-const DB_NAME = 'microfinance';
+const DB_NAME = 'altiafinance';
 
 function generateClientNumber(index) {
     return `CL-2026-${String(index).padStart(6, '0')}`;

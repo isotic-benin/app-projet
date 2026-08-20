@@ -5,7 +5,7 @@ import crypto from 'crypto';
 dotenv.config({ path: '.env.local' });
 
 const MONGODB_URI = process.env.MONGODB_URI!;
-const DB_NAME = 'microfinance';
+const DB_NAME = 'altiafinance';
 
 function generateClientNumber(index: number): string {
     return `CL-2026-${String(index).padStart(6, '0')}`;

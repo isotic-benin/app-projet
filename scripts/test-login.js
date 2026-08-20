@@ -2,7 +2,7 @@ const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 
 const MONGODB_URI = 'mongodb://localhost:27017/cred';
-const DB_NAME = 'microfinance';
+const DB_NAME = 'altiafinance';
 
 async function check() {
     const client = new MongoClient(MONGODB_URI);

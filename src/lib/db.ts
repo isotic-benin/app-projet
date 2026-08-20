@@ -24,7 +24,7 @@ async function dbConnect(): Promise<Db> {
     }
 
     if (cached.client) {
-        return cached.client.db('microfinance');
+        return cached.client.db('altiafinance');
     }
 
     if (!cached.promise) {
@@ -38,7 +38,7 @@ async function dbConnect(): Promise<Db> {
     }
 
     const client = await cached.promise;
-    return client.db('microfinance');
+    return client.db('altiafinance');
 }
 
 export async function getDb(): Promise<Db> {
