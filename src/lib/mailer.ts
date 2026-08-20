@@ -110,6 +110,33 @@ export async function sendVerificationEmail(email: string, firstName: string, to
   });
 }
 
+export async function sendPasswordResetEmail(email: string, firstName: string, token: string) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const resetLink = `${baseUrl}/reinitialisation?token=${token}`;
+
+  const html = `
+    <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; color: #0B1B33;">
+      <h2 style="color: #0082f0;">Réinitialisation de votre mot de passe, ${firstName}</h2>
+      <p>Vous (ou quelqu'un d'autre) avez demandé la réinitialisation du mot de passe de votre compte Altia Finance.</p>
+      <p>Vous pouvez définir un nouveau mot de passe en cliquant sur le lien ci-dessous :</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetLink}" style="background-color: #0082f0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          Réinitialiser mon mot de passe
+        </a>
+      </div>
+      <p style="font-size: 13px; color: #666;">Ce lien expirera dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Demande de réinitialisation de mot de passe - Altia Finance',
+    html,
+    templateName: 'password_reset',
+    variables: { firstName, resetLink },
+  });
+}
+
 // ────────────────────────────────────────────────
 // Email templates
 // ────────────────────────────────────────────────

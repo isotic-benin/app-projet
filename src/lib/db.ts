@@ -66,4 +66,5 @@ export const COLLECTIONS = {
     EMAIL_LOGS: 'emailLogs',
     SETTINGS: 'settings',
     NOTIFICATIONS: 'notifications',
+    PASSWORD_RESETS: 'passwordResets',
 } as const;
