@@ -26,9 +26,15 @@ function generateAmortizationTable(principal: number, annualRate: number, months
 
     for (let i = 1; i <= months; i++) {
         const interest = Math.round(remaining * r);
-        const capitalPaid = monthly - interest;
+        let capitalPaid = monthly - interest;
+        
+        if (i === months) {
+            capitalPaid = remaining; // Solder exactement le reste
+        }
+        
         remaining = Math.max(0, remaining - capitalPaid);
-        rows.push({ month: i, payment: monthly, interest, capital: capitalPaid, remaining });
+        const payment = capitalPaid + interest;
+        rows.push({ month: i, payment: payment, interest, capital: capitalPaid, remaining });
     }
     return rows;
 }
@@ -44,9 +50,9 @@ export default function LoanApplicationForm() {
     const [error, setError] = useState<string | null>(null);
 
     const monthlyPayment = useMemo(() => computeMonthlyPayment(amount, selectedProduct.rate, duration), [amount, selectedProduct, duration]);
-    const totalCost = monthlyPayment * duration;
-    const totalInterest = totalCost - amount;
     const amortization = useMemo(() => generateAmortizationTable(amount, selectedProduct.rate, duration), [amount, selectedProduct, duration]);
+    const totalCost = useMemo(() => amortization.reduce((acc, row) => acc + row.payment, 0), [amortization]);
+    const totalInterest = useMemo(() => amortization.reduce((acc, row) => acc + row.interest, 0), [amortization]);
 
     const handleSubmit = async () => {
         if (!purpose.trim() || purpose.trim().length < 10) {

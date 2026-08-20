@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getDb, COLLECTIONS } from '@/lib/db';
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Endpoint called by Vercel Cron or any other Task Scheduler (e.g., node-cron) daily at midnight.
  * Automatically expires loan applications that have passed their 14-day guarantee deposit deadline.

@@ -59,7 +59,7 @@ export async function POST(req: Request) {
             productName: product?.name || productId,
             amount: amountCents,
             duration,
-            annualRate: product?.interestRate || 14.5,
+            annualRate: product?.annualInterestRate ?? 14.5,
             purpose,
             status,
             guaranteeDeposit: {

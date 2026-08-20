@@ -22,14 +22,14 @@ export async function GET(req: Request) {
         if (!user) {
             return new NextResponse(
                 `
-        <html><head><title>Erreur</title></head>
+        <html><head><meta charset="UTF-8"><title>Erreur</title></head>
         <body style="font-family: sans-serif; text-align: center; padding: 50px;">
           <h2>Lien invalide ou expiré</h2>
           <p>Le lien de vérification est invalide ou a expiré. Veuillez vous reconnecter pour demander un nouveau lien.</p>
           <a href="/connexion">Retour à la connexion</a>
         </body></html>
         `,
-                { headers: { 'Content-Type': 'text/html' }, status: 400 }
+                { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 400 }
             );
         }
 
@@ -61,14 +61,14 @@ export async function GET(req: Request) {
         // Return success page
         return new NextResponse(
             `
-      <html><head><title>Succès</title></head>
+      <html><head><meta charset="UTF-8"><title>Succès</title></head>
       <body style="font-family: sans-serif; text-align: center; padding: 50px;">
         <h2 style="color: #0082f0;">Votre email a été vérifié avec succès !</h2>
         <p>Merci ${user.firstName}. Vous pouvez maintenant procéder à la sécurisation de votre compte.</p>
         <a href="/connexion" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #0082f0; color: white; text-decoration: none; border-radius: 5px;">Accéder à mon espace</a>
       </body></html>
       `,
-            { headers: { 'Content-Type': 'text/html' } }
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
 
     } catch (err: any) {

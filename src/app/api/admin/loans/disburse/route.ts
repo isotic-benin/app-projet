@@ -21,7 +21,13 @@ function generateAmortizationTable(principal: number, annualRate: number, months
 
     for (let i = 1; i <= months; i++) {
         const interest = Math.round(remaining * r);
-        const capitalPaid = monthly - interest;
+        let capitalPaid = monthly - interest;
+
+        if (i === months) {
+            // Dernière échéance : solder exactement le capital restant (évite les écarts d'arrondi)
+            capitalPaid = remaining;
+        }
+
         remaining = Math.max(0, remaining - capitalPaid);
 
         // Add exactly i months to startDate
@@ -33,7 +39,7 @@ function generateAmortizationTable(principal: number, annualRate: number, months
             dueDate,
             principalDue: capitalPaid,
             interestDue: interest,
-            totalDue: monthly,
+            totalDue: capitalPaid + interest,
             amountPaid: 0,
             status: 'pending', // 'pending' | 'paid' | 'late'
             paidAt: null,

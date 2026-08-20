@@ -7,78 +7,78 @@ const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
 const fromEmail = process.env.SMTP_FROM || process.env.EMAIL_FROM || 'noreply@altiafinance.com';
 
 const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    // LWS présente un certificat wildcard (*.lwspanel.com) sur les boîtes mail des clients :
-    // on contourne la vérification du nom d'hôte tout en gardant une connexion chiffrée TLS.
-    tls: {
-        rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
-    },
-    auth: {
-        user: process.env.SMTP_USER || fromEmail,
-        pass: process.env.SMTP_PASS,
-    },
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpPort === 465,
+  // LWS présente un certificat wildcard (*.lwspanel.com) sur les boîtes mail des clients :
+  // on contourne la vérification du nom d'hôte tout en gardant une connexion chiffrée TLS.
+  tls: {
+    rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
+  },
+  auth: {
+    user: process.env.SMTP_USER || fromEmail,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
 interface SendEmailParams {
-    to: string;
-    subject: string;
-    html: string;
-    templateName: string;
-    variables: Record<string, any>;
-    relatedApplicationId?: string | ObjectId;
-    attachments?: { filename: string; content: string }[];
+  to: string;
+  subject: string;
+  html: string;
+  templateName: string;
+  variables: Record<string, any>;
+  relatedApplicationId?: string | ObjectId;
+  attachments?: { filename: string; content: string }[];
 }
 
 /**
  * Core email sender function. Logs all outbound emails into `emailLogs`.
  */
 export async function sendEmail({ to, subject, html, templateName, variables, relatedApplicationId, attachments }: SendEmailParams) {
+  try {
+    await transporter.sendMail({
+      from: `Altia Finance <${fromEmail}>`,
+      to,
+      subject,
+      html,
+      attachments: attachments?.map(a => ({ filename: a.filename, content: a.content, encoding: 'base64' })),
+    });
+
+    const db = await getDb();
+    await db.collection(COLLECTIONS.EMAIL_LOGS).insertOne({
+      to,
+      subject,
+      template: templateName,
+      variables,
+      relatedApplicationId: relatedApplicationId ? new ObjectId(relatedApplicationId) : null,
+      status: 'sent',
+      errorMessage: null,
+      sentAt: new Date(),
+    });
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('[EMAIL ERROR]', error);
+
+    // Log failure blindly to email logs
     try {
-        await transporter.sendMail({
-            from: `Altia Finance <${fromEmail}>`,
-            to,
-            subject,
-            html,
-            attachments: attachments?.map(a => ({ filename: a.filename, content: a.content, encoding: 'base64' })),
-        });
-
-        const db = await getDb();
-        await db.collection(COLLECTIONS.EMAIL_LOGS).insertOne({
-            to,
-            subject,
-            template: templateName,
-            variables,
-            relatedApplicationId: relatedApplicationId ? new ObjectId(relatedApplicationId) : null,
-            status: 'sent',
-            errorMessage: null,
-            sentAt: new Date(),
-        });
-
-        return { success: true, error: null };
-    } catch (error: any) {
-        console.error('[EMAIL ERROR]', error);
-
-        // Log failure blindly to email logs
-        try {
-            const db = await getDb();
-            await db.collection(COLLECTIONS.EMAIL_LOGS).insertOne({
-                to,
-                subject,
-                template: templateName,
-                variables,
-                relatedApplicationId: relatedApplicationId ? new ObjectId(relatedApplicationId) : null,
-                status: 'failed',
-                errorMessage: error.message,
-                sentAt: new Date(),
-            });
-        } catch {
-            // Ignore if DB is down as well
-        }
-
-        return { success: false, error };
+      const db = await getDb();
+      await db.collection(COLLECTIONS.EMAIL_LOGS).insertOne({
+        to,
+        subject,
+        template: templateName,
+        variables,
+        relatedApplicationId: relatedApplicationId ? new ObjectId(relatedApplicationId) : null,
+        status: 'failed',
+        errorMessage: error.message,
+        sentAt: new Date(),
+      });
+    } catch {
+      // Ignore if DB is down as well
     }
+
+    return { success: false, error };
+  }
 }
 
 // ────────────────────────────────────────────────
@@ -86,9 +86,9 @@ export async function sendEmail({ to, subject, html, templateName, variables, re
 // ────────────────────────────────────────────────
 
 export async function sendVerificationEmail(email: string, firstName: string, token: string) {
-    const verifyLink = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
+  const verifyLink = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
 
-    const html = `
+  const html = `
     <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; color: #0B1B33;">
       <h2 style="color: #0082f0;">Bienvenue chez Altia Finance, ${firstName} !</h2>
       <p>Merci de vous être inscrit sur notre plateforme. Pour finaliser la création de votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :</p>
@@ -101,13 +101,13 @@ export async function sendVerificationEmail(email: string, firstName: string, to
     </div>
   `;
 
-    return sendEmail({
-        to: email,
-        subject: 'Vérifiez votre adresse email - Altia Finance',
-        html,
-        templateName: 'email_verification',
-        variables: { firstName, verifyLink },
-    });
+  return sendEmail({
+    to: email,
+    subject: 'Vérifiez votre adresse email - Altia Finance',
+    html,
+    templateName: 'email_verification',
+    variables: { firstName, verifyLink },
+  });
 }
 
 // ────────────────────────────────────────────────
@@ -115,19 +115,19 @@ export async function sendVerificationEmail(email: string, firstName: string, to
 // ────────────────────────────────────────────────
 
 function formatEuro(amountCents: number): string {
-    return (amountCents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+  return (amountCents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
 }
 
 function computeMonthlyPayment(principal: number, annualRate: number, months: number): number {
-    const r = (annualRate / 100) / 12;
-    if (r === 0) return Math.round(principal / months);
-    return Math.round((principal * r) / (1 - Math.pow(1 + r, -months)));
+  const r = (annualRate / 100) / 12;
+  if (r === 0) return Math.round(principal / months);
+  return Math.round((principal * r) / (1 - Math.pow(1 + r, -months)));
 }
 
 export async function sendKycDecisionEmail(email: string, firstName: string, decision: 'approve' | 'reject', reason?: string) {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-    const html = `
+  const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #0B1B33; border: 1px solid #E5E5EA; border-radius: 16px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #E6007E, #B3005F); padding: 24px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 20px;">Altia Finance</h1>
@@ -157,13 +157,13 @@ export async function sendKycDecisionEmail(email: string, firstName: string, dec
     </div>
   `;
 
-    return sendEmail({
-        to: email,
-        subject: decision === 'approve' ? 'Votre compte Altia Finance est activé' : 'Votre dossier Altia Finance a été rejeté',
-        html,
-        templateName: 'kyc_decision',
-        variables: { firstName, decision, reason },
-    });
+  return sendEmail({
+    to: email,
+    subject: decision === 'approve' ? 'Votre compte Altia Finance est activé' : 'Votre dossier Altia Finance a été rejeté',
+    html,
+    templateName: 'kyc_decision',
+    variables: { firstName, decision, reason },
+  });
 }
 
 /**
@@ -172,61 +172,71 @@ export async function sendKycDecisionEmail(email: string, firstName: string, dec
  * taux d'intérêt, échéancier prévisionnel et mentions légales.
  */
 export async function sendLoanContractEmail({
-    to,
-    user,
-    application,
-    subject,
-    customMessage,
-    attachments,
+  to,
+  user,
+  application,
+  subject,
+  customMessage,
+  attachments,
 }: {
-    to: string;
-    user: { firstName: string; lastName: string; clientNumber: string };
-    application: {
-        id?: string | ObjectId;
-        applicationNumber: string;
-        productName: string;
-        amount: number;
-        duration: number;
-        annualRate: number;
-        guaranteeAmount: number;
-        studyFee: number;
-        deadline: Date | null;
-        createdByAdmin?: string;
-    };
-    subject?: string;
-    customMessage?: string;
-    attachments?: { filename: string; content: string }[];
+  to: string;
+  user: { firstName: string; lastName: string; clientNumber: string };
+  application: {
+    id?: string | ObjectId;
+    applicationNumber: string;
+    productName: string;
+    amount: number;
+    duration: number;
+    annualRate: number;
+    guaranteeAmount: number;
+    studyFee: number;
+    deadline: Date | null;
+    createdByAdmin?: string;
+  };
+  subject?: string;
+  customMessage?: string;
+  attachments?: { filename: string; content: string }[];
 }) {
-    const amount = application.amount;
-    const rate = application.annualRate;
-    const months = application.duration;
-    const monthlyPayment = computeMonthlyPayment(amount, rate, months);
-    const totalCost = monthlyPayment * months;
-    const totalInterest = totalCost - amount;
+  const amount = application.amount;
+  const rate = application.annualRate;
+  const months = application.duration;
+  const monthlyPayment = computeMonthlyPayment(amount, rate, months);
 
-    const guarantee = application.guaranteeAmount;
-    const studyFee = application.studyFee;
+  let totalCost = 0;
+  let remaining = amount;
+  const r = (rate / 100) / 12;
+  for (let i = 1; i <= months; i++) {
+    const interest = Math.round(remaining * r);
+    let cap = monthlyPayment - interest;
+    if (i === months) cap = remaining;
+    remaining = Math.max(0, remaining - cap);
+    totalCost += cap + interest;
+  }
+  const totalInterest = totalCost - amount;
 
-    const deadline = application.deadline;
-    const deadlineText = deadline
-        ? `avant le ${deadline.toLocaleDateString('fr-FR')} (${Math.max(0, Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} jours)`
-        : 'sous un délai de 14 jours à compter de la réception de ce contrat';
+  const guarantee = application.guaranteeAmount;
+  const studyFee = application.studyFee;
 
-    const finalSubject = subject || `Contrat de prêt ${application.productName} — Dossier ${application.applicationNumber}`;
+  const deadline = application.deadline;
+  const deadlineText = deadline
+    ? `avant le ${deadline.toLocaleDateString('fr-FR')} (${Math.max(0, Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} jours)`
+    : 'sous un délai de 14 jours à compter de la réception de ce contrat';
 
-    const rows = Array.from({ length: Math.min(months, 6) }, (_, i) => {
-        const num = i + 1;
-        const due = new Date();
-        due.setMonth(due.getMonth() + num);
-        return `
+  const finalSubject = subject || `Contrat de prêt ${application.productName} — Dossier ${application.applicationNumber}`;
+
+  const rows = Array.from({ length: Math.min(months, 6) }, (_, i) => {
+    const num = i + 1;
+    const due = new Date();
+    due.setMonth(due.getMonth() + num);
+    return `
         <tr>
           <td style="padding: 8px 12px; border-bottom: 1px solid #EEEEF0; text-align: center;">${num}</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #EEEEF0; text-align: center;">${due.toLocaleDateString('fr-FR')}</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #EEEEF0; text-align: right;">${formatEuro(monthlyPayment)}</td>
         </tr>`;
-    }).join('');
+  }).join('');
 
-    const html = `
+  const html = `
   <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 720px; margin: 0 auto; color: #0B1B33; border: 1px solid #E5E5EA; border-radius: 16px; overflow: hidden;">
     <div style="background: linear-gradient(135deg, #E6007E, #B3005F); padding: 28px 32px; text-align: center;">
       <h1 style="color: white; margin: 0 0 4px 0; font-size: 22px; letter-spacing: 0.5px;">OFFRE DE PRÊT PERSONNALISÉE</h1>
@@ -299,57 +309,57 @@ export async function sendLoanContractEmail({
   </div>
   `;
 
-    return sendEmail({
-        to,
-        subject: finalSubject,
-        html,
-        templateName: 'loan_contract',
-        variables: {
-            applicationNumber: application.applicationNumber,
-            amount: formatEuro(amount),
-            rate,
-            months,
-            guarantee: formatEuro(guarantee),
-            studyFee: formatEuro(studyFee),
-        },
-        relatedApplicationId: (application as any).id || undefined,
-        attachments,
-    });
+  return sendEmail({
+    to,
+    subject: finalSubject,
+    html,
+    templateName: 'loan_contract',
+    variables: {
+      applicationNumber: application.applicationNumber,
+      amount: formatEuro(amount),
+      rate,
+      months,
+      guarantee: formatEuro(guarantee),
+      studyFee: formatEuro(studyFee),
+    },
+    relatedApplicationId: (application as any).id || undefined,
+    attachments,
+  });
 }
 
 /**
  * Envoie le contrat de prêt en PDF (fichier joint) directement au client.
  */
 export async function sendLoanContractPdfEmail({
-    to,
-    user,
-    application,
-    pdfBuffer,
-    pdfFileName,
-    customMessage,
+  to,
+  user,
+  application,
+  pdfBuffer,
+  pdfFileName,
+  customMessage,
 }: {
-    to: string;
-    user: { firstName: string; lastName: string; clientNumber: string };
-    application: {
-        id?: string | ObjectId;
-        applicationNumber: string;
-        productName: string;
-        amount: number;
-        duration: number;
-        annualRate: number;
-        guaranteeAmount: number;
-        studyFee: number;
-    };
-    pdfBuffer: Buffer;
-    pdfFileName: string;
-    customMessage?: string;
+  to: string;
+  user: { firstName: string; lastName: string; clientNumber: string };
+  application: {
+    id?: string | ObjectId;
+    applicationNumber: string;
+    productName: string;
+    amount: number;
+    duration: number;
+    annualRate: number;
+    guaranteeAmount: number;
+    studyFee: number;
+  };
+  pdfBuffer: Buffer;
+  pdfFileName: string;
+  customMessage?: string;
 }) {
-    const guarantee = application.guaranteeAmount;
-    const studyFee = application.studyFee;
-    const amount = application.amount;
-    const monthly = computeMonthlyPayment(amount, application.annualRate, application.duration);
+  const guarantee = application.guaranteeAmount;
+  const studyFee = application.studyFee;
+  const amount = application.amount;
+  const monthly = computeMonthlyPayment(amount, application.annualRate, application.duration);
 
-    const html = `
+  const html = `
     <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #0B1B33; border: 1px solid #E5E5EA; border-radius: 16px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #0B1B33, #005bbb); padding: 28px 32px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 22px;">Altia Finance</h1>
@@ -382,18 +392,18 @@ export async function sendLoanContractPdfEmail({
     </div>
   `;
 
-    return sendEmail({
-        to,
-        subject: `Votre contrat de prêt ${application.productName} — Dossier ${application.applicationNumber}`,
-        html,
-        templateName: 'loan_contract_pdf',
-        variables: {
-            applicationNumber: application.applicationNumber,
-            amount: formatEuro(amount),
-            guarantee: formatEuro(guarantee),
-            studyFee: formatEuro(studyFee),
-        },
-        relatedApplicationId: (application as any).id || undefined,
-        attachments: [{ filename: pdfFileName, content: pdfBuffer.toString('base64') }],
-    });
+  return sendEmail({
+    to,
+    subject: `Votre contrat de prêt ${application.productName} — Dossier ${application.applicationNumber}`,
+    html,
+    templateName: 'loan_contract_pdf',
+    variables: {
+      applicationNumber: application.applicationNumber,
+      amount: formatEuro(amount),
+      guarantee: formatEuro(guarantee),
+      studyFee: formatEuro(studyFee),
+    },
+    relatedApplicationId: (application as any).id || undefined,
+    attachments: [{ filename: pdfFileName, content: pdfBuffer.toString('base64') }],
+  });
 }

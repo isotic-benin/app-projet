@@ -57,6 +57,13 @@ async function seed() {
             active: true, createdAt: new Date(), updatedAt: new Date(),
         },
         {
+            slug: 'pret-travaux', name: 'Prêt Travaux', category: 'travaux',
+            description: 'Financez vos travaux de construction ou de rénovation.',
+            minAmount: 5000000, maxAmount: 50000000, minDurationMonths: 12, maxDurationMonths: 72,
+            annualInterestRate: 15.0, taeg: 16.8, requiredDocuments: [],
+            active: true, createdAt: new Date(), updatedAt: new Date(),
+        },
+        {
             slug: 'mini-pret', name: 'Mini Prêt Express', category: 'mini_pret',
             description: 'Un coup de pouce rapide pour une dépense imprévue.',
             minAmount: 1000000, maxAmount: 50000000, minDurationMonths: 1, maxDurationMonths: 12,

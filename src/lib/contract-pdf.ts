@@ -68,8 +68,19 @@ export async function generateLoanContractPdf(input: ContractPdfInput): Promise<
     const maxWidth = width - margin * 2;
 
     const monthly = computeMonthlyPayment(input.amount, input.annualRate, input.duration);
-    const totalCost = monthly * input.duration;
-    const totalInterest = totalCost - input.amount;
+
+    let totalInterest = 0;
+    let totalCost = 0;
+    let remainingClient = input.amount;
+    const rLoop = input.annualRate / 100 / 12;
+    for (let i = 1; i <= input.duration; i++) {
+        const intDue = Math.round(remainingClient * rLoop);
+        let capDue = monthly - intDue;
+        if (i === input.duration) capDue = remainingClient;
+        remainingClient = Math.max(0, remainingClient - capDue);
+        totalInterest += intDue;
+        totalCost += capDue + intDue;
+    }
 
     let y = height - margin;
 
@@ -195,8 +206,14 @@ export async function generateLoanContractPdf(input: ContractPdfInput): Promise<
     const numRows = Math.min(input.duration, 6);
     const r = input.annualRate / 100 / 12;
     for (let i = 1; i <= numRows; i++) {
-        const interestI = Math.round(balBefore(input.amount, monthly, r, i) * r);
-        const capitalI = monthly - interestI;
+        const balI = balBefore(input.amount, monthly, r, i);
+        const interestI = Math.round(balI * r);
+        let capitalI = monthly - interestI;
+        if (i === input.duration) {
+            capitalI = balI;
+        }
+        const paymentI = capitalI + interestI;
+
         const dueDate = new Date();
         dueDate.setMonth(dueDate.getMonth() + i);
 
@@ -205,7 +222,7 @@ export async function generateLoanContractPdf(input: ContractPdfInput): Promise<
             dueDate.toLocaleDateString('fr-FR'),
             formatEuro(capitalI),
             formatEuro(interestI),
-            formatEuro(monthly),
+            formatEuro(paymentI),
         ];
 
         const bg = i % 2 === 0 ? rgb(1, 1, 1) : rgb(0.965, 0.973, 0.98);

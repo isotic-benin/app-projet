@@ -21,7 +21,17 @@ export default function HeroSimulator() {
     const [duration, setDuration] = useState(6);
 
     const monthly = computeMonthlyPayment(amount, RATE, duration);
-    const totalCost = monthly * duration;
+
+    let totalCost = 0;
+    let remaining = amount;
+    const r = (RATE / 100) / 12;
+    for (let i = 1; i <= duration; i++) {
+        const interest = Math.round(remaining * r);
+        let cap = monthly - interest;
+        if (i === duration) cap = remaining;
+        remaining = Math.max(0, remaining - cap);
+        totalCost += cap + interest;
+    }
     const totalInterest = totalCost - amount;
 
     return (
