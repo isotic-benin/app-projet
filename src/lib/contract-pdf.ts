@@ -259,22 +259,22 @@ export async function generateLoanContractPdf(input: ContractPdfInput): Promise<
     // ─── Signature block ───
     sectionTitle('5. Acceptation et signature', 14);
 
-    page.drawRectangle({ x: margin, y: y - 88, width: tableWidth, height: 88, color: LIGHT, borderColor: BORDER, borderWidth: 1 });
+    page.drawRectangle({ x: margin, y: y - 130, width: tableWidth, height: 130, color: LIGHT, borderColor: BORDER, borderWidth: 1 });
 
     const leftX = margin + 20;
     const rightX = margin + tableWidth / 2 + 20;
 
-    page.drawText('L’emprunteur', { x: leftX, y: y - 20, size: 10.5, font: helveticaBold, color: NAVY });
+    page.drawText('L\u2019emprunteur', { x: leftX, y: y - 20, size: 10.5, font: helveticaBold, color: NAVY });
     page.drawText('Signature précédée de la mention', { x: leftX, y: y - 35, size: 8.5, font: helvetica, color: GRAY });
-    page.drawText('« Lu et approuvé »', { x: leftX, y: y - 47, size: 8.5, font: timesItalic, color: GRAY });
-    page.drawLine({ start: { x: leftX, y: y - 68 }, end: { x: leftX + 180, y: y - 68 }, thickness: 0.8, color: GRAY });
-    page.drawText('Nom, date et signature', { x: leftX, y: y - 82, size: 8, font: helvetica, color: GRAY });
+    page.drawText('\u00AB Lu et approuvé \u00BB', { x: leftX, y: y - 47, size: 8.5, font: timesItalic, color: GRAY });
+    page.drawLine({ start: { x: leftX, y: y - 110 }, end: { x: leftX + 180, y: y - 110 }, thickness: 0.8, color: GRAY });
+    page.drawText('Nom, date et signature', { x: leftX, y: y - 124, size: 8, font: helvetica, color: GRAY });
 
     page.drawText('Altia Finance', { x: rightX, y: y - 20, size: 10.5, font: helveticaBold, color: NAVY });
     page.drawText('Pour la société', { x: rightX, y: y - 35, size: 8.5, font: helvetica, color: GRAY });
     page.drawText('Cachet et signature', { x: rightX, y: y - 47, size: 8.5, font: helvetica, color: GRAY });
-    page.drawLine({ start: { x: rightX, y: y - 68 }, end: { x: rightX + 180, y: y - 68 }, thickness: 0.8, color: GRAY });
-    page.drawText('Administration Altia Finance', { x: rightX, y: y - 82, size: 8, font: helvetica, color: GRAY });
+    page.drawLine({ start: { x: rightX, y: y - 110 }, end: { x: rightX + 180, y: y - 110 }, thickness: 0.8, color: GRAY });
+    page.drawText('Administration Altia Finance', { x: rightX, y: y - 124, size: 8, font: helvetica, color: GRAY });
 
     // ─── Footer ───
     page.drawRectangle({ x: 0, y: 0, width, height: 40, color: NAVY });
