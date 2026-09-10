@@ -17,10 +17,6 @@ export default function RegistrationPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [registeredEmail, setRegisteredEmail] = useState<string>('');
-    const [verifyLink, setVerifyLink] = useState<string | null>(null);
-    const [isResending, setIsResending] = useState(false);
-    const [resendMsg, setResendMsg] = useState<string | null>(null);
 
     const {
         register,
@@ -64,42 +60,13 @@ export default function RegistrationPage() {
                 const errorData = await res.json();
                 throw new Error(errorData.error || 'Erreur lors de la création du compte');
             }
-            const json: any = await res.json();
-            setRegisteredEmail(json.email || '');
-            // Lien instantané retourné par l'API (dev) pour vérification immédiate sans attendre l'email
-            if (json.verifyLink) setVerifyLink(json.verifyLink);
+            await res.json();
             setIsSuccess(true);
         } catch (err: any) {
             setError(err.message);
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const handleResend = async () => {
-        if (!registeredEmail) return;
-        setIsResending(true);
-        setResendMsg(null);
-        try {
-            const res = await fetch('/api/auth/resend-verification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: registeredEmail }),
-            });
-            const d = await res.json();
-            if (!res.ok) throw new Error(d.error || 'Erreur');
-            setResendMsg('Email renvoyé avec succès ! Vérifiez votre boîte (et les spams).');
-            if (d.verifyLink) setVerifyLink(d.verifyLink);
-        } catch (e: any) {
-            setResendMsg(e.message);
-        } finally {
-            setIsResending(false);
-        }
-    };
-
-    const handleInstantVerify = async () => {
-        if (!verifyLink) return;
-        window.location.href = verifyLink;
     };
 
     if (isSuccess) {
@@ -111,25 +78,12 @@ export default function RegistrationPage() {
                     </svg>
                 </div>
                 <h2 className="text-2xl font-bold text-navy mb-4">Compte créé avec succès !</h2>
-                <p className="text-gray-500 mb-2 max-w-sm mx-auto">
-                    Nous vous avons envoyé un email de vérification à <strong className="text-navy">{registeredEmail}</strong>. L'envoi est automatique et instantané (pool SMTP keep-alive).
+                <p className="text-gray-500 mb-8 max-w-sm mx-auto">
+                    Votre compte est actif. Vous pouvez vous connecter immédiatement sans vérification email.
                 </p>
-                <p className="text-xs text-gray-400 mb-6">Si vous ne le voyez pas dans 10s, vérifiez vos spams ou renvoyez-le.</p>
-
-                <div className="flex flex-col gap-3 max-w-sm mx-auto">
-                    {verifyLink && (
-                        <button onClick={handleInstantVerify} className="btn-primary w-full py-3.5">
-                            Vérifier mon email instantanément →
-                        </button>
-                    )}
-                    <button onClick={handleResend} disabled={isResending} className="btn-secondary w-full py-3.5 disabled:opacity-60">
-                        {isResending ? 'Renvoi...' : 'Renvoyer l’email'}
-                    </button>
-                    {resendMsg && <p className="text-sm text-primary-600 font-medium">{resendMsg}</p>}
-                    <Link href="/connexion" className="text-sm text-gray-500 font-medium hover:text-navy mt-2">
-                        Retour à la connexion
-                    </Link>
-                </div>
+                <Link href="/connexion" className="btn-primary">
+                    Se connecter maintenant →
+                </Link>
             </div>
         );
     }

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getDb, COLLECTIONS } from '@/lib/db';
 import { registerUserSchema } from '@/lib/validators';
-import { encrypt, generateToken } from '@/lib/crypto';
+import { encrypt } from '@/lib/crypto';
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
-import { sendVerificationEmail } from '@/lib/mailer';
 import { ObjectId } from 'mongodb';
 
 export async function POST(req: Request) {
@@ -37,18 +36,16 @@ export async function POST(req: Request) {
         const clientNumber = `CL-${new Date().getFullYear()}-${num}`;
 
         const newUserId = new ObjectId();
-        const verificationToken = generateToken();
-        const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h lookup
 
-        // Create user object
+        // Vérification email désactivée en prod : compte directement actif et vérifié
         const userDoc = {
             _id: newUserId,
             clientNumber,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email.toLowerCase(),
-            emailVerified: false,
-            emailVerifiedAt: null,
+            emailVerified: true,
+            emailVerifiedAt: new Date(),
             phone: data.phone,
             phoneVerified: false,
             passwordHash,
@@ -70,14 +67,11 @@ export async function POST(req: Request) {
                 reviewedAt: null,
                 rejectionReason: null,
             },
-            status: 'pending_verification',
+            status: 'active',
             twoFactorEnabled: false,
             lastLoginAt: null,
             createdAt: new Date(),
             updatedAt: new Date(),
-            // Internal field for token, normally you'd use a separate 'verificationTokens' collection, but embedded is fine here
-            _verificationToken: verificationToken,
-            _verificationTokenExpiresAt: tokenExpiresAt,
         };
 
         await usersCol.insertOne(userDoc);
@@ -89,36 +83,13 @@ export async function POST(req: Request) {
             action: AUDIT_ACTIONS.USER_REGISTERED,
             targetType: 'user',
             targetId: newUserId,
-            metadata: { email: userDoc.email },
+            metadata: { email: userDoc.email, autoVerified: true },
         });
-
-        // Envoi ultra-rapide en arrière-plan — ne bloque PAS la réponse
-        // On lance l'envoi sans attendre, avec retry léger en cas d'échec ponctuel LWS
-        const sendWithRetry = async (attempt = 1) => {
-            try {
-                const res = await sendVerificationEmail(data.email, data.firstName, verificationToken);
-                if (!res.success && attempt < 2) {
-                    await new Promise(r => setTimeout(r, 800));
-                    return sendWithRetry(attempt + 1);
-                }
-            } catch (e) {
-                if (attempt < 2) {
-                    await new Promise(r => setTimeout(r, 800));
-                    return sendWithRetry(attempt + 1);
-                }
-                console.error('[REGISTER MAIL RETRY FAILED]', e);
-            }
-        };
-        setImmediate(() => void sendWithRetry());
-
-        const verifyLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/verify-email?token=${verificationToken}`;
 
         return NextResponse.json({
             success: true,
-            message: 'Compte créé avec succès — lien de vérification envoyé automatiquement',
+            message: 'Compte créé avec succès',
             userId: newUserId.toString(),
-            // Pour test instantané en dev : lien direct (à ne pas exposer en prod si vous le souhaitez)
-            verifyLink,
             email: data.email,
         }, { status: 201 });
 
