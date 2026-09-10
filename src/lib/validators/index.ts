@@ -134,6 +134,11 @@ export const settingsUpdateSchema = z.object({
         'guarantee_deposit_percentage',
         'guarantee_deposit_deadline_days',
         'currency',
+        'guarantee_bank_holder',
+        'guarantee_bank_iban',
+        'guarantee_bank_bic',
+        'guarantee_bank_name',
+        'guarantee_bank_instructions',
     ]),
     value: z.union([z.string(), z.number(), z.boolean()]),
 });

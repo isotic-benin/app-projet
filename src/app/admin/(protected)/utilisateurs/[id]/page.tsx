@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import WithdrawalDecisionButtons from './WithdrawalDecisionButtons';
+import DeleteUserButton from './DeleteUserButton';
 
 const TX_LABELS: Record<string, { label: string; color: string }> = {
     disbursement: { label: 'Déblocage prêt', color: 'text-green-600' },
@@ -58,6 +59,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
                     >
                         Voir KYC
                     </Link>
+                    <DeleteUserButton userId={userId.toString()} email={user.email} clientNumber={user.clientNumber} name={`${user.firstName} ${user.lastName}`} />
                 </div>
             </div>
 

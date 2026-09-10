@@ -434,3 +434,155 @@ export async function sendLoanContractPdfEmail({
     attachments: [{ filename: pdfFileName, content: pdfBuffer.toString('base64') }],
   });
 }
+
+/**
+ * Email d'invitation au versement de la garantie + frais, incluant le RIB paramétré par l'admin.
+ */
+export async function sendGuaranteePaymentInstructionsEmail({
+  to,
+  user,
+  application,
+  bank,
+}: {
+  to: string;
+  user: { firstName: string; lastName: string; clientNumber: string };
+  application: {
+    applicationNumber: string;
+    productName: string;
+    amount: number;
+    guaranteeAmount: number;
+    studyFee: number;
+    deadline: Date | null;
+  };
+  bank: {
+    holder: string;
+    iban: string;
+    ibanFormatted: string;
+    bic?: string | null;
+    name?: string | null;
+    instructions?: string | null;
+  };
+}) {
+  const total = application.guaranteeAmount + application.studyFee;
+  const deadlineText = application.deadline
+    ? `avant le ${application.deadline.toLocaleDateString('fr-FR')} (sous 14 jours)`
+    : 'sous 14 jours à compter de ce mail';
+  const html = `
+  <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:680px;margin:0 auto;color:#0B1B33;border:1px solid #E5E5EA;border-radius:16px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#0B1B33,#005bbb);padding:28px 32px;text-align:center;">
+      <h1 style="color:white;margin:0;font-size:22px;">Altia Finance</h1>
+      <p style="color:#9db8ff;margin:6px 0 0 0;font-size:13px;">Demande de versement — Dossier ${application.applicationNumber}</p>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="margin-top:0;color:#0B1B33;">Bonjour ${user.firstName} ${user.lastName},</h2>
+      <p style="color:#5C5C66;line-height:1.6;">Votre contrat signé pour le <strong>${application.productName}</strong> a bien été <strong style="color:#1E9E5A;">validé</strong> par notre équipe. Pour procéder au déblocage de vos fonds, merci d’effectuer le versement suivant <strong>${deadlineText}</strong> :</p>
+
+      <div style="background:#F7F7F9;border:1px solid #E5E5EA;border-radius:12px;padding:20px 24px;margin:20px 0;">
+        <p style="margin:0 0 8px 0;font-size:14px;color:#5C5C66;">Montant du prêt : <strong style="color:#0B1B33;">${formatEuro(application.amount)}</strong></p>
+        <p style="margin:0 0 8px 0;font-size:14px;color:#5C5C66;">Dépôt de garantie (10%) : <strong style="color:#0B1B33;">${formatEuro(application.guaranteeAmount)}</strong></p>
+        <p style="margin:0 0 8px 0;font-size:14px;color:#5C5C66;">Frais d’étude de dossier : <strong style="color:#0B1B33;">${formatEuro(application.studyFee)}</strong></p>
+        <div style="height:1px;background:#E5E5EA;margin:12px 0;"></div>
+        <p style="margin:0;font-size:16px;color:#0B1B33;">Total à verser : <strong style="color:#E6007E;font-size:18px;">${formatEuro(total)}</strong></p>
+        <p style="margin:8px 0 0 0;font-size:12px;color:#9E9EA8;">Référence à indiquer : <span style="font-family:monospace;background:#fff;border:1px solid #E5E5EA;border-radius:6px;padding:2px 8px;">${application.applicationNumber} - ${user.firstName} ${user.lastName}</span></p>
+      </div>
+
+      <h3 style="font-size:15px;margin:24px 0 12px 0;border-bottom:2px solid #E6007E;padding-bottom:6px;">Coordonnées bancaires pour le virement</h3>
+      <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:12px;padding:20px 24px;margin:12px 0;">
+        <p style="margin:0 0 6px 0;font-size:14px;"><strong>Titulaire :</strong> ${bank.holder}</p>
+        <p style="margin:0 0 6px 0;font-size:14px;"><strong>IBAN / RIB :</strong> <span style="font-family:monospace;background:white;border:1px solid #FFE082;border-radius:6px;padding:4px 10px;letter-spacing:0.5px;">${bank.ibanFormatted || bank.iban}</span></p>
+        ${bank.bic ? `<p style="margin:0 0 6px 0;font-size:14px;"><strong>BIC :</strong> <span style="font-family:monospace;">${bank.bic}</span></p>` : ''}
+        ${bank.name ? `<p style="margin:0 0 6px 0;font-size:14px;"><strong>Banque :</strong> ${bank.name}</p>` : ''}
+        ${bank.instructions ? `<p style="margin:12px 0 0 0;font-size:13px;color:#5C5C66;background:#fff;border:1px solid #FFE08233;border-radius:8px;padding:10px 14px;">${bank.instructions}</p>` : ''}
+      </div>
+
+      <div style="background:#E6F4FF;border:1px solid #0082f033;border-radius:12px;padding:16px 20px;margin:20px 0;">
+        <p style="margin:0;font-size:13px;color:#0B1B33;line-height:1.6;"><strong>Après virement :</strong> déposez votre preuve (avis de virement / capture) dans votre espace client <strong>Mes Crédits → Verser la garantie</strong>. Notre équipe validera sous 24h ouvrées et débloquera vos fonds.</p>
+      </div>
+
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${process.env.NEXTAUTH_URL}/mon-compte/prets" style="background-color:#0082f0;color:white;padding:14px 28px;text-decoration:none;border-radius:999px;font-weight:bold;display:inline-block;">Déposer ma preuve de virement</a>
+      </div>
+
+      <div style="background:#F7F7F9;border-radius:12px;padding:16px 20px;margin-top:24px;font-size:12px;color:#5C5C66;line-height:1.7;">
+        <strong style="color:#0B1B33;">Important :</strong> effectuez un virement bancaire classique (pas de dépôt d’espèces). Conservez votre preuve jusqu’à validation.
+      </div>
+    </div>
+  </div>
+  `;
+  return sendEmail({
+    to,
+    subject: `Versement requis — Garantie ${formatEuro(application.guaranteeAmount)} + frais ${formatEuro(application.studyFee)} — Dossier ${application.applicationNumber}`,
+    html,
+    templateName: 'guarantee_instructions',
+    variables: {
+      applicationNumber: application.applicationNumber,
+      guarantee: formatEuro(application.guaranteeAmount),
+      studyFee: formatEuro(application.studyFee),
+      total: formatEuro(total),
+      iban: bank.iban,
+    },
+    relatedApplicationId: (application as any).id || undefined,
+  });
+}
+
+/**
+ * Email de notification de déblocage — invite le client à retirer ses fonds du portefeuille.
+ */
+export async function sendLoanDisbursedEmail({
+  to,
+  user,
+  application,
+}: {
+  to: string;
+  user: { firstName: string; lastName: string; clientNumber: string };
+  application: {
+    applicationNumber: string;
+    productName: string;
+    amount: number;
+    duration: number;
+    annualRate: number;
+  };
+}) {
+  const monthly = computeMonthlyPayment(application.amount, application.annualRate, application.duration);
+  const html = `
+  <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:640px;margin:0 auto;color:#0B1B33;border:1px solid #E5E5EA;border-radius:16px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#1E9E5A,#0B6B3A);padding:28px 32px;text-align:center;">
+      <h1 style="color:white;margin:0;font-size:22px;">Altia Finance</h1>
+      <p style="color:#d1fae5;margin:6px 0 0 0;font-size:13px;">Fonds débloqués — Dossier ${application.applicationNumber}</p>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="margin-top:0;color:#0B1B33;">Bonjour ${user.firstName} ${user.lastName},</h2>
+      <p style="color:#5C5C66;line-height:1.7;">Excellente nouvelle : votre prêt <strong>${application.productName}</strong> a été <strong style="color:#1E9E5A;">débloqué</strong> par notre équipe.</p>
+
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px 24px;margin:20px 0;text-align:center;">
+        <p style="margin:0 0 6px 0;font-size:13px;color:#5C5C66;">Montant crédité sur votre portefeuille</p>
+        <p style="margin:0;font-size:28px;font-weight:900;color:#0B1B33;letter-spacing:0.5px;">${formatEuro(application.amount)}</p>
+        <p style="margin:6px 0 0 0;font-size:13px;color:#5C5C66;">Réf. ${application.applicationNumber} · ${application.duration} mois · ${application.annualRate}% · Mensualité ${formatEuro(monthly)}</p>
+      </div>
+
+      <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:16px 20px;margin:20px 0;">
+        <p style="margin:0;font-size:14px;color:#0B1B33;line-height:1.7;"><strong>Prochaine étape — Retirez vos fonds :</strong> connectez-vous à votre espace client, rendez-vous sur votre tableau de bord <strong>« Mon portefeuille »</strong> puis cliquez sur <strong>« Retirer de l’argent »</strong>. Renseignez votre RIB/IBAN et le montant souhaité : le virement sera traité sous <strong>24-48h ouvrées</strong>.</p>
+      </div>
+
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${process.env.NEXTAUTH_URL}/mon-compte" style="background-color:#1E9E5A;color:white;padding:14px 28px;text-decoration:none;border-radius:999px;font-weight:bold;display:inline-block;">Accéder à mon portefeuille</a>
+      </div>
+
+      <div style="background:#F7F7F9;border-radius:12px;padding:16px 20px;margin-top:24px;font-size:12px;color:#5C5C66;line-height:1.7;">
+        <strong style="color:#0B1B33;">Rappel :</strong> votre échéancier de remboursement est disponible dans <em>Mes Crédits → Échéancier</em>. Le crédit vous engage et doit être remboursé.
+      </div>
+    </div>
+  </div>
+  `;
+  return sendEmail({
+    to,
+    subject: `Fonds débloqués — ${formatEuro(application.amount)} crédités sur votre portefeuille — Dossier ${application.applicationNumber}`,
+    html,
+    templateName: 'loan_disbursed',
+    variables: {
+      applicationNumber: application.applicationNumber,
+      amount: formatEuro(application.amount),
+    },
+    relatedApplicationId: (application as any).applicationNumber as any,
+  });
+}

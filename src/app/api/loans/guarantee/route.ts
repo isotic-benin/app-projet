@@ -56,21 +56,21 @@ export async function POST(req: Request) {
             ? application.guaranteeDeposit.required
             : Math.round((application.amount || 0) * 0.10);
 
-        if (useBalance) {
-            const user = await db.collection(COLLECTIONS.USERS).findOne({ _id: userId });
-            const balance = user?.accountBalance || 0;
-
-            if (balance < guaranteeRequired) {
-                return NextResponse.json({ error: 'Solde insuffisant pour couvrir la garantie.' }, { status: 400 });
-            }
-
-            await db.collection(COLLECTIONS.USERS).updateOne(
-                { _id: userId },
-                { $inc: { accountBalance: -guaranteeRequired }, $set: { updatedAt: new Date() } }
-            );
-        } else {
-            await new Promise(r => setTimeout(r, 1000));
+        // Simulation désactivée : le client doit désormais déposer une preuve de virement réel
+        if (!useBalance) {
+            return NextResponse.json({ error: 'Veuillez déposer votre preuve de virement bancaire sur la page Garantie. Le paiement en un clic n’est plus disponible.' }, { status: 400 });
         }
+        const user = await db.collection(COLLECTIONS.USERS).findOne({ _id: userId });
+        const balance = user?.accountBalance || 0;
+
+        if (balance < guaranteeRequired) {
+            return NextResponse.json({ error: 'Solde insuffisant pour couvrir la garantie.' }, { status: 400 });
+        }
+
+        await db.collection(COLLECTIONS.USERS).updateOne(
+            { _id: userId },
+            { $inc: { accountBalance: -guaranteeRequired }, $set: { updatedAt: new Date() } }
+        );
 
         const txResult = await db.collection('transactions').insertOne({
             userId,
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
             type: 'guarantee_deposit',
             amount: guaranteeRequired,
             status: 'completed',
-            method: useBalance ? 'from_balance' : 'bank_transfer',
+            method: 'from_balance',
             createdAt: new Date(),
         });
 
@@ -97,9 +97,7 @@ export async function POST(req: Request) {
                         status: 'guarantee_paid',
                         changedAt: now,
                         changedBy: userId,
-                        note: useBalance
-                            ? 'Dépôt de garantie versé depuis le solde du compte'
-                            : 'Dépôt de garantie versé par le client',
+                        note: 'Dépôt de garantie versé depuis le solde du compte',
                     },
                 } as any,
             }
@@ -119,7 +117,7 @@ export async function POST(req: Request) {
             action: AUDIT_ACTIONS.GUARANTEE_DEPOSIT_SUBMITTED,
             targetType: 'loan_application',
             targetId: appId,
-            metadata: { amount: guaranteeRequired, transactionId: txResult.insertedId, method: useBalance ? 'from_balance' : 'bank_transfer' },
+            metadata: { amount: guaranteeRequired, transactionId: txResult.insertedId, method: 'from_balance' },
         });
 
         return NextResponse.json({ success: true });

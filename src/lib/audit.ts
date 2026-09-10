@@ -83,4 +83,5 @@ export const AUDIT_ACTIONS = {
     ADMIN_LOGIN: 'admin.login',
     SETTINGS_UPDATED: 'settings.updated',
     LOAN_PRODUCT_UPDATED: 'loan_product.updated',
+    USER_DELETED: 'user.deleted',
 } as const;

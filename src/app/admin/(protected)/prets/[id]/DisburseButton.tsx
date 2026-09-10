@@ -11,6 +11,7 @@ export default function DisburseButton({ applicationId }: { applicationId: strin
     const method = 'bank_transfer';
 
     const handleDisburse = async () => {
+        if (isProcessing) return;
         setIsProcessing(true);
         setError(null);
         try {
@@ -20,8 +21,13 @@ export default function DisburseButton({ applicationId }: { applicationId: strin
                 body: JSON.stringify({ applicationId, method, reference: `VIREMENT-${Date.now()}` })
             });
 
+            const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                throw new Error((await res.json()).error || 'Erreur lors du décaissement');
+                throw new Error(data.error || 'Erreur lors du décaissement');
+            }
+            if (data.alreadyDisbursed) {
+                setError('Prêt déjà débloqué — aucune nouvelle opération effectuée.');
+                return;
             }
 
             router.refresh();

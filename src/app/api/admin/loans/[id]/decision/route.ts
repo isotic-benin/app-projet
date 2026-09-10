@@ -5,7 +5,7 @@ import { getDb, COLLECTIONS } from '@/lib/db';
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { ObjectId } from 'mongodb';
 import { generateAndStoreLoanContract, computeGuaranteeAmount, CONTRACT_STUDY_FEE_CENTS } from '@/lib/loan-contract';
-import { sendLoanContractPdfEmail } from '@/lib/mailer';
+import { sendLoanContractPdfEmail, sendLoanDisbursedEmail } from '@/lib/mailer';
 import { createNotification, NOTIFICATION_TYPES } from '@/lib/notifications';
 
 function computeMonthlyPayment(principal: number, annualRate: number, months: number): number {
@@ -192,12 +192,18 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     console.error('[CONTRACT GENERATION ERROR]', contractErr);
                 }
             } else {
+                // Garde-fou anti double déblocage via décision (auto-disburse)
+                const existingDisbursement2 = await db.collection('transactions').findOne({ loanApplicationId: loanId, type: 'disbursement' });
+                if (existingDisbursement2) {
+                    return NextResponse.json({ error: 'Ce prêt a déjà été débloqué. Opération unique.' }, { status: 409 });
+                }
                 newStatus = 'disbursed';
                 note = 'Dossier approuvé avec succès. L\'utilisateur ayant déjà réglé la garantie de 10%, les fonds ont été automatiquement décaissés.';
                 auditAction = AUDIT_ACTIONS.LOAN_APPLICATION_APPROVED;
 
-                await db.collection(COLLECTIONS.LOAN_APPLICATIONS).updateOne(
-                    { _id: loanId },
+                // Update atomique : ne passe à disbursed que si encore under_review
+                const atomicDecision = await db.collection(COLLECTIONS.LOAN_APPLICATIONS).findOneAndUpdate(
+                    { _id: loanId, status: 'under_review' },
                     {
                         $set: {
                             status: newStatus,
@@ -215,10 +221,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                                 note: note,
                             },
                         } as any,
-                    }
+                    },
+                    { returnDocument: 'after' }
                 );
+                const updatedDecisionDoc = (atomicDecision as any)?.value !== undefined ? (atomicDecision as any).value : atomicDecision;
+                if (!updatedDecisionDoc) {
+                    return NextResponse.json({ error: 'Dossier déjà traité ou statut invalide.' }, { status: 409 });
+                }
 
-                // Créditer le portefeuille du client
+                // Créditer le portefeuille du client (une seule fois après succès atomique)
                 await db.collection(COLLECTIONS.USERS).updateOne(
                     { _id: application.userId },
                     { $inc: { accountBalance: application.amount }, $set: { updatedAt: now } }
@@ -247,7 +258,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 await db.collection('repaymentSchedules').insertOne(repaymentDoc);
 
                 // Create disbursement transaction
-                await db.collection('transactions').insertOne({
+                const disbursedTxId = (await db.collection('transactions').insertOne({
                     userId: application.userId,
                     loanApplicationId: loanId,
                     type: 'disbursement',
@@ -255,7 +266,46 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     status: 'completed',
                     method: 'automatic',
                     createdAt: now,
+                })).insertedId;
+
+                await createNotification({
+                    userId: application.userId,
+                    type: NOTIFICATION_TYPES.LOAN_DISBURSED,
+                    title: 'Votre prêt a été débloqué',
+                    message: `${(application.amount / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} € ont été crédités sur votre portefeuille. Connectez-vous pour retirer vos fonds : Mon portefeuille → Retirer de l’argent.`,
+                    link: '/mon-compte',
                 });
+                try {
+                    const userForMail = await db.collection(COLLECTIONS.USERS).findOne({ _id: application.userId });
+                    if (userForMail?.email) {
+                        const mailRes = await sendLoanDisbursedEmail({
+                            to: userForMail.email,
+                            user: { firstName: userForMail.firstName, lastName: userForMail.lastName, clientNumber: userForMail.clientNumber || '' },
+                            application: {
+                                applicationNumber: application.applicationNumber,
+                                productName: application.productName,
+                                amount: application.amount,
+                                duration: application.duration,
+                                annualRate: application.annualRate,
+                            },
+                        });
+                        await db.collection(COLLECTIONS.LOAN_APPLICATIONS).updateOne(
+                            { _id: loanId },
+                            {
+                                $push: {
+                                    emailThread: {
+                                        subject: `Fonds débloqués — ${(application.amount / 100).toLocaleString('fr-FR')} € — Dossier ${application.applicationNumber}`,
+                                        direction: 'outbound',
+                                        sentAt: new Date(),
+                                        body: mailRes.success ? `Email déblocage envoyé à ${userForMail.email}` : `Échec email déblocage: ${mailRes.error?.message || 'erreur'}`,
+                                    },
+                                } as any,
+                            }
+                        );
+                    }
+                } catch (mailErr) {
+                    console.error('[DISBURSE MAIL ERROR decision]', mailErr);
+                }
             }
         } else {
             newStatus = 'rejected';

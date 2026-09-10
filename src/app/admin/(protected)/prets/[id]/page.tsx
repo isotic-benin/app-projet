@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AdminDecisionButtons from './AdminDecisionButtons';
 import DisburseButton from './DisburseButton';
 import InviteGuaranteeButton from './InviteGuaranteeButton';
+import GuaranteeValidateButtons from './GuaranteeValidateButtons';
 import SendContractForm from './SendContractForm';
 import { Banknote, Clock, AlertTriangle, Mail, FileSignature, FileText, Download, HandCoins, CheckCircle2 } from 'lucide-react';
 
@@ -172,20 +173,10 @@ export default async function AdminLoanDetails({ params }: { params: { id: strin
                             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
                                 <h3 className="text-amber-800 font-bold mb-3 flex items-center gap-2">
                                     <FileSignature className="w-5 h-5" />
-                                    Contrat signé reçu — Prêt à débloquer
+                                    Contrat signé reçu — Invitation garantie à envoyer
                                 </h3>
                                 <p className="text-sm text-amber-900/70 mb-4">
-                                    Le client a déposé son contrat signé. Vous pouvez maintenant débloquer les fonds : le montant de {displayAmount} € sera crédité instantanément sur son portefeuille (carte « Mon portefeuille » de son tableau de bord).
-                                </p>
-                                <DisburseButton applicationId={application._id.toString()} />
-                            </div>
-                            <div className="bg-white border border-border rounded-2xl p-5">
-                                <h4 className="text-sm font-bold text-navy mb-2 flex items-center gap-2">
-                                    <HandCoins className="w-4 h-4 text-gray-500" />
-                                    Garantie (optionnel)
-                                </h4>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Invitez le client à verser la garantie de {displayGuarantee} € si vous souhaitez l'exiger avant le retrait des fonds.
+                                    Le client a déposé son contrat signé. Envoyez-lui par email les coordonnées bancaires (RIB paramétré) pour le versement de {displayGuarantee} € + frais d’étude. Le mail contient le RIB et le montant total à virer.
                                 </p>
                                 {application.guaranteeDeposit?.invitedAt ? (
                                     <div className="flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 inline-flex">
@@ -196,6 +187,32 @@ export default async function AdminLoanDetails({ params }: { params: { id: strin
                                     <InviteGuaranteeButton applicationId={application._id.toString()} />
                                 )}
                             </div>
+                            {application.guaranteeDeposit?.status === 'submitted' && (
+                                <div className="bg-white border border-border rounded-2xl p-5">
+                                    <h4 className="text-sm font-bold text-navy mb-3 flex items-center gap-2">
+                                        <HandCoins className="w-4 h-4 text-amber-600" />
+                                        Preuve de garantie déposée — à valider
+                                    </h4>
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-bold text-navy">Justificatif client</p>
+                                            <p className="text-xs text-gray-500">{application.guaranteeDeposit?.proofFileName || 'preuve'} · {application.guaranteeDeposit?.submittedAt ? new Date(application.guaranteeDeposit.submittedAt).toLocaleString('fr-FR') : ''}</p>
+                                        </div>
+                                        {application.guaranteeDeposit?.proofUrl && (
+                                            <a href={application.guaranteeDeposit.proofUrl} target="_blank" className="inline-flex items-center gap-2 text-sm font-bold text-primary-600 hover:text-primary-700">
+                                                <Download className="w-4 h-4" /> Voir
+                                            </a>
+                                        )}
+                                    </div>
+                                    <GuaranteeValidateButtons applicationId={application._id.toString()} />
+                                </div>
+                            )}
+                            {application.guaranteeDeposit?.status === 'rejected' && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                                    <p className="text-sm font-bold text-red-800">Preuve rejetée : {application.guaranteeDeposit?.rejectionReason}</p>
+                                    <p className="text-xs text-red-700 mt-1">Le client peut déposer une nouvelle preuve depuis son espace.</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
