@@ -7,6 +7,11 @@ const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
 const fromEmail = process.env.SMTP_FROM || process.env.EMAIL_FROM || 'noreply@altiafinance.com';
 
 const transporter = nodemailer.createTransport({
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateDelta: 1000,
+  rateLimit: 10,
   host: smtpHost,
   port: smtpPort,
   secure: smtpPort === 465,

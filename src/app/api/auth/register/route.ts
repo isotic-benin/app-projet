@@ -92,12 +92,14 @@ export async function POST(req: Request) {
             metadata: { email: userDoc.email },
         });
 
-        // Fire & forget email sending
-        sendVerificationEmail(data.email, data.firstName, verificationToken).catch(console.error);
+        // Envoi ultra-rapide en arrière-plan — ne bloque PAS la réponse (setImmediate = event-loop next tick)
+        setImmediate(() => {
+            sendVerificationEmail(data.email, data.firstName, verificationToken).catch(console.error);
+        });
 
         return NextResponse.json({
             success: true,
-            message: 'Compte créé avec succès',
+            message: 'Compte créé avec succès — lien de vérification envoyé automatiquement',
             userId: newUserId.toString(),
         }, { status: 201 });
 
