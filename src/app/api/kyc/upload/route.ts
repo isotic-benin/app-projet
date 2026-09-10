@@ -6,6 +6,10 @@ import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { ObjectId } from 'mongodb';
 import { saveFile } from '@/lib/file-storage';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 // Champs de documents acceptés (form-data)
 const DOCUMENT_FIELDS = [
     'cni',                    // Pièce d'identité (obligatoire)

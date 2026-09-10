@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getFile } from '@/lib/file-storage';
 import { extname } from 'path';
-import fs from 'fs/promises';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MIME_TYPES: Record<string, string> = {

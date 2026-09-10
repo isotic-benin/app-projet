@@ -51,6 +51,14 @@ export default function KycPage() {
             if (files[key]) formData.append(key, files[key] as File);
         });
 
+        // Vérif taille totale avant envoi (limite serveur 25 Mo)
+        const totalSize = (Object.values(files) as (File | null)[]).reduce((acc, f) => acc + (f?.size || 0), 0);
+        if (totalSize > 20 * 1024 * 1024) {
+            setError('Taille totale trop élevée (max 20 Mo). Compressez vos fichiers ou réduisez la résolution.');
+            setIsUploading(false);
+            return;
+        }
+
         try {
             const res = await fetch('/api/kyc/upload', {
                 method: 'POST',
@@ -59,13 +67,17 @@ export default function KycPage() {
 
             if (!res.ok) {
                 let errorMsg = 'Erreur lors de l\'envoi des documents';
-                try {
-                    const data = await res.json();
-                    errorMsg = data.error || errorMsg;
-                } catch {
-                    const text = await res.text().catch(() => '');
-                    if (text) errorMsg = text.slice(0, 300);
-                    else errorMsg = `Erreur ${res.status}: ${res.statusText}`;
+                if (res.status === 413) {
+                    errorMsg = 'Fichiers trop volumineux (limite 25 Mo). Réduisez la taille de vos PDFs/images et réessayez. Astuce : compressez ou photographiez en qualité moyenne.';
+                } else {
+                    try {
+                        const data = await res.json();
+                        errorMsg = data.error || errorMsg;
+                    } catch {
+                        const text = await res.text().catch(() => '');
+                        if (text) errorMsg = text.slice(0, 300);
+                        else errorMsg = `Erreur ${res.status}: ${res.statusText}`;
+                    }
                 }
                 throw new Error(errorMsg);
             }

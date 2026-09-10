@@ -7,6 +7,10 @@ import { createNotification, NOTIFICATION_TYPES } from '@/lib/notifications';
 import { ObjectId } from 'mongodb';
 import { saveFile } from '@/lib/file-storage';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 const ALLOWED_EXTS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
 const MIME_BY_EXT: Record<string, string> = {
     pdf: 'application/pdf',
