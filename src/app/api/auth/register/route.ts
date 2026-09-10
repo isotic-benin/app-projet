@@ -92,15 +92,34 @@ export async function POST(req: Request) {
             metadata: { email: userDoc.email },
         });
 
-        // Envoi ultra-rapide en arrière-plan — ne bloque PAS la réponse (setImmediate = event-loop next tick)
-        setImmediate(() => {
-            sendVerificationEmail(data.email, data.firstName, verificationToken).catch(console.error);
-        });
+        // Envoi ultra-rapide en arrière-plan — ne bloque PAS la réponse
+        // On lance l'envoi sans attendre, avec retry léger en cas d'échec ponctuel LWS
+        const sendWithRetry = async (attempt = 1) => {
+            try {
+                const res = await sendVerificationEmail(data.email, data.firstName, verificationToken);
+                if (!res.success && attempt < 2) {
+                    await new Promise(r => setTimeout(r, 800));
+                    return sendWithRetry(attempt + 1);
+                }
+            } catch (e) {
+                if (attempt < 2) {
+                    await new Promise(r => setTimeout(r, 800));
+                    return sendWithRetry(attempt + 1);
+                }
+                console.error('[REGISTER MAIL RETRY FAILED]', e);
+            }
+        };
+        setImmediate(() => void sendWithRetry());
+
+        const verifyLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/verify-email?token=${verificationToken}`;
 
         return NextResponse.json({
             success: true,
             message: 'Compte créé avec succès — lien de vérification envoyé automatiquement',
             userId: newUserId.toString(),
+            // Pour test instantané en dev : lien direct (à ne pas exposer en prod si vous le souhaitez)
+            verifyLink,
+            email: data.email,
         }, { status: 201 });
 
     } catch (err: any) {

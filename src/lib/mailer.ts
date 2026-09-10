@@ -91,7 +91,8 @@ export async function sendEmail({ to, subject, html, templateName, variables, re
 // ────────────────────────────────────────────────
 
 export async function sendVerificationEmail(email: string, firstName: string, token: string) {
-  const verifyLink = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
+  const base = (process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const verifyLink = `${base}/api/auth/verify-email?token=${token}`;
 
   const html = `
     <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; color: #0B1B33;">
