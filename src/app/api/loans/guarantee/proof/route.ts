@@ -122,6 +122,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, proofUrl: url });
     } catch (e: any) {
         console.error('[GUARANTEE PROOF ERROR]', e);
-        return NextResponse.json({ error: 'Erreur lors du dépôt de la preuve.' }, { status: 500 });
+        const msg = e?.message ? String(e.message).slice(0, 400) : 'Erreur interne';
+        return NextResponse.json({ error: `Erreur lors du dépôt: ${msg}` }, { status: 500 });
     }
 }

@@ -98,6 +98,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, message: 'Documents KYC soumis avec succès.' });
     } catch (err: any) {
         console.error('[UPLOAD KYC ERROR]', err);
-        return NextResponse.json({ error: 'Erreur interne lors de la sauvegarde.' }, { status: 500 });
+        const msg = err?.message ? String(err.message).slice(0, 400) : 'Erreur interne';
+        return NextResponse.json({ error: `Erreur lors de la sauvegarde: ${msg}` }, { status: 500 });
     }
 }

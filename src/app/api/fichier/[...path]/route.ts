@@ -51,14 +51,15 @@ export async function GET(
         const ext = extname(prefix).toLowerCase();
         const resolvedContentType = fileResult.contentType || MIME_TYPES[ext] || 'application/octet-stream';
 
-        // fileResult.stream peut être un Node Readable ou un Web ReadableStream
-        // On convertit en Response compatible
         let body: any = fileResult.stream;
-        // Si c'est un Node stream, on le lit en Buffer pour NextResponse
-        if (typeof (body as any).pipe === 'function') {
+        if (Buffer.isBuffer(body)) {
+            // déjà un Buffer (MongoDB fallback)
+        } else if (typeof (body as any).pipe === 'function') {
             const chunks: Buffer[] = [];
             for await (const chunk of body as any) chunks.push(Buffer.from(chunk));
             body = Buffer.concat(chunks);
+        } else if (body instanceof ReadableStream) {
+            // Web ReadableStream → on le passe tel quel à NextResponse
         }
 
         return new NextResponse(body, {

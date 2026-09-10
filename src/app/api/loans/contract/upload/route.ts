@@ -95,6 +95,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, message: 'Contrat signé déposé avec succès. Notre équipe va procéder au déblocage de vos fonds.' });
     } catch (err: any) {
         console.error('[CONTRACT UPLOAD ERROR]', err);
-        return NextResponse.json({ error: 'Erreur interne lors de la sauvegarde.' }, { status: 500 });
+        const msg = err?.message ? String(err.message).slice(0, 400) : 'Erreur interne';
+        return NextResponse.json({ error: `Erreur lors de la sauvegarde: ${msg}` }, { status: 500 });
     }
 }
