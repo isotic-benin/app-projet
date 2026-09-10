@@ -233,6 +233,6 @@ export async function POST(req: Request) {
 
     } catch (err: any) {
         console.error('[DISBURSE ERROR]', err);
-        return NextResponse.json({ error: 'System error' }, { status: 500 });
+        return NextResponse.json({ error: err?.message || 'System error', detail: String(err?.stack || '').slice(0, 500) }, { status: 500 });
     }
 }

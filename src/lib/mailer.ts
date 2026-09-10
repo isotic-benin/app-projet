@@ -589,6 +589,6 @@ export async function sendLoanDisbursedEmail({
       applicationNumber: application.applicationNumber,
       amount: formatEuro(application.amount),
     },
-    relatedApplicationId: (application as any).applicationNumber as any,
+    relatedApplicationId: (application as any).id || (application as any)._id || undefined,
   });
 }
