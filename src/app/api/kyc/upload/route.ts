@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { getDb, COLLECTIONS } from '@/lib/db';
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { ObjectId } from 'mongodb';
-import { put } from '@vercel/blob';
+import { saveFile } from '@/lib/file-storage';
 
 // Champs de documents acceptés (form-data)
 const DOCUMENT_FIELDS = [
@@ -49,24 +49,21 @@ export async function POST(req: Request) {
 
         const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
 
-        const saveFile = async (file: File, type: string) => {
+        const saveFileWrapped = async (file: File, type: string) => {
             const ext = (file.name.split('.').pop() || '').toLowerCase();
             if (!ALLOWED_EXTENSIONS.includes(ext)) {
                 throw new Error(`Extension .${ext} non autorisée`);
             }
             const buffer = Buffer.from(await file.arrayBuffer());
             const fileName = `${type}_${Date.now()}.${ext}`;
-            await put(`${userId}/${fileName}`, buffer, {
-                access: 'private',
-                contentType: MIME_BY_EXT[ext] || 'application/octet-stream',
-                addRandomSuffix: false,
-            });
+            const key = `${userId}/${fileName}`;
+            await saveFile(key, buffer, MIME_BY_EXT[ext] || 'application/octet-stream', 'private');
             return `/api/fichier/${userId}/${fileName}`;
         };
 
         const documents: { type: string; url: string; uploadedAt: Date }[] = [];
         for (const [field, file] of Object.entries(files)) {
-            const path = await saveFile(file, field);
+            const path = await saveFileWrapped(file, field);
             documents.push({ type: field, url: path, uploadedAt: new Date() });
         }
 

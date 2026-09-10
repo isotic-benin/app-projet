@@ -5,7 +5,7 @@ import { getDb, COLLECTIONS } from '@/lib/db';
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { createNotification, NOTIFICATION_TYPES } from '@/lib/notifications';
 import { ObjectId } from 'mongodb';
-import { put } from '@vercel/blob';
+import { saveFile } from '@/lib/file-storage';
 
 const ALLOWED_EXTS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
 const MIME_BY_EXT: Record<string, string> = {
@@ -53,11 +53,8 @@ export async function POST(req: Request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
         const fileName = `garantie_${application.applicationNumber}_${Date.now()}.${ext}`;
-        await put(`${session.user.id}/${fileName}`, buffer, {
-            access: 'private',
-            contentType: MIME_BY_EXT[ext] || 'application/octet-stream',
-            addRandomSuffix: false,
-        });
+        const key = `${session.user.id}/${fileName}`;
+        await saveFile(key, buffer, MIME_BY_EXT[ext] || 'application/octet-stream', 'private');
         const url = `/api/fichier/${session.user.id}/${fileName}`;
 
         const now = new Date();

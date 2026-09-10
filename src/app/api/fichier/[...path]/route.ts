@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { get } from '@vercel/blob';
+import { getFile } from '@/lib/file-storage';
 import { extname } from 'path';
+import fs from 'fs/promises';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,15 +43,25 @@ export async function GET(
 
         const prefix = segments.join('/');
 
-        const result = await get(prefix, { access: 'private' });
-        if (!result) {
+        const fileResult = await getFile(prefix);
+        if (!fileResult) {
             return NextResponse.json({ error: 'Fichier non trouvé' }, { status: 404 });
         }
 
         const ext = extname(prefix).toLowerCase();
-        const resolvedContentType = result.blob.contentType || MIME_TYPES[ext] || 'application/octet-stream';
+        const resolvedContentType = fileResult.contentType || MIME_TYPES[ext] || 'application/octet-stream';
 
-        return new NextResponse(result.stream, {
+        // fileResult.stream peut être un Node Readable ou un Web ReadableStream
+        // On convertit en Response compatible
+        let body: any = fileResult.stream;
+        // Si c'est un Node stream, on le lit en Buffer pour NextResponse
+        if (typeof (body as any).pipe === 'function') {
+            const chunks: Buffer[] = [];
+            for await (const chunk of body as any) chunks.push(Buffer.from(chunk));
+            body = Buffer.concat(chunks);
+        }
+
+        return new NextResponse(body, {
             status: 200,
             headers: {
                 'Content-Type': resolvedContentType,

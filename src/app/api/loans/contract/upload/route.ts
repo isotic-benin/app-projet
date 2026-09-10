@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { getDb, COLLECTIONS } from '@/lib/db';
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit';
 import { ObjectId } from 'mongodb';
-import { put } from '@vercel/blob';
+import { saveFile } from '@/lib/file-storage';
 
 const ALLOWED_EXTENSIONS = ['pdf'];
 
@@ -52,11 +52,8 @@ export async function POST(req: Request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
         const fileName = `signed_contract_${application.applicationNumber}_${Date.now()}.pdf`;
-        await put(`${session.user.id}/${fileName}`, buffer, {
-            access: 'private',
-            contentType: 'application/pdf',
-            addRandomSuffix: false,
-        });
+        const key = `${session.user.id}/${fileName}`;
+        await saveFile(key, buffer, 'application/pdf', 'private');
         const url = `/api/fichier/${session.user.id}/${fileName}`;
 
         const now = new Date();

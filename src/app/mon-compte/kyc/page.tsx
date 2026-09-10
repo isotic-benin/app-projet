@@ -58,14 +58,22 @@ export default function KycPage() {
             });
 
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Erreur lors de l\'envoi des documents');
+                let errorMsg = 'Erreur lors de l\'envoi des documents';
+                try {
+                    const data = await res.json();
+                    errorMsg = data.error || errorMsg;
+                } catch {
+                    const text = await res.text().catch(() => '');
+                    if (text) errorMsg = text.slice(0, 300);
+                    else errorMsg = `Erreur ${res.status}: ${res.statusText}`;
+                }
+                throw new Error(errorMsg);
             }
 
             router.push('/mon-compte');
             router.refresh();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Erreur réseau lors de l’envoi');
             setIsUploading(false);
         }
     };

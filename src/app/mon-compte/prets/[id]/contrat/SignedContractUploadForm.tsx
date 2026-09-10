@@ -41,10 +41,18 @@ export default function SignedContractUploadForm({ applicationId }: { applicatio
                 body: formData,
             });
 
-            const data = await res.json();
             if (!res.ok) {
-                throw new Error(data.error || "Erreur lors de l'envoi du contrat");
+                let msg = "Erreur lors de l'envoi du contrat";
+                try {
+                    const data = await res.json();
+                    msg = data.error || msg;
+                } catch {
+                    const text = await res.text().catch(() => '');
+                    msg = text ? text.slice(0, 300) : `${res.status} ${res.statusText}`;
+                }
+                throw new Error(msg);
             }
+            await res.json().catch(() => ({}));
 
             setSuccess(true);
             setTimeout(() => router.refresh(), 900);

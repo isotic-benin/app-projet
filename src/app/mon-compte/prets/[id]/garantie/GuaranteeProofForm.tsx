@@ -49,12 +49,22 @@ export default function GuaranteeProofForm({ applicationId, guaranteeAmount, stu
             fd.append('applicationId', applicationId);
             fd.append('proof', file);
             const res = await fetch('/api/loans/guarantee/proof', { method: 'POST', body: fd });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Erreur lors du dépôt');
+            if (!res.ok) {
+                let msg = 'Erreur lors du dépôt';
+                try {
+                    const data = await res.json();
+                    msg = data.error || msg;
+                } catch {
+                    const text = await res.text().catch(() => '');
+                    msg = text ? text.slice(0, 300) : `${res.status} ${res.statusText}`;
+                }
+                throw new Error(msg);
+            }
+            await res.json().catch(() => ({}));
             setSuccess(true);
             setTimeout(() => router.refresh(), 900);
         } catch (e: any) {
-            setError(e.message);
+            setError(e.message || 'Erreur réseau');
             setIsUploading(false);
         }
     };
