@@ -11,6 +11,7 @@ const TYPE_STYLES: Record<string, { icon: any; color: string; bg: string }> = {
     guarantee_invite: { icon: HandCoins, color: 'text-amber-600', bg: 'bg-amber-50' },
     guarantee_paid: { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     loan_disbursed: { icon: Banknote, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    withdrawal_submitted: { icon: Banknote, color: 'text-blue-600', bg: 'bg-blue-50' },
     withdrawal_validated: { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     withdrawal_rejected: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
 };

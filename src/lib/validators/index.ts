@@ -96,7 +96,7 @@ export const loanApplicationStep2Schema = z.object({
 // ────────────────────────────────────────────────
 export const depositProofSchema = z.object({
     amount: z.number().positive('Montant requis'),
-    method: z.enum(['bank_transfer', 'mobile_money', 'cash_agency', 'card']),
+    method: z.enum(['bank_transfer']),
 });
 
 // ────────────────────────────────────────────────

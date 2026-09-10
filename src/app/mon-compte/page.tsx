@@ -4,7 +4,8 @@ import { getDb, COLLECTIONS } from '@/lib/db';
 import { ObjectId } from 'mongodb';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Briefcase, ShieldCheck, Clock, UserCheck, Wallet } from 'lucide-react';
+import { Briefcase, ShieldCheck, Clock, UserCheck } from 'lucide-react';
+import WalletCard from './WalletCard';
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -58,20 +59,8 @@ export default async function DashboardPage() {
                     )}
                 </div>
 
-                {/* WIDGET PORTEFEUILLE */}
-                <div className="card w-full shadow-sm transition-shadow bg-gradient-to-br from-navy to-primary-700 text-white border-none">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-bold text-white/80 text-sm uppercase tracking-wider">Mon portefeuille</h2>
-                        <Wallet className="w-5 h-5 text-white/60" />
-                    </div>
-                    <p className="text-3xl font-extrabold font-mono mb-1">
-                        {((user.accountBalance || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                    </p>
-                    <p className="text-primary-200 text-xs mb-4">Solde disponible</p>
-                    <Link href="/mon-compte/retrait" className="btn-white w-full text-center text-sm py-3">
-                        Retirer de l'argent
-                    </Link>
-                </div>
+                {/* WIDGET PORTEFEUILLE - avec modal retrait RIB */}
+                <WalletCard balance={user.accountBalance || 0} lastBankInfo={user.lastWithdrawalBankInfo || null} />
 
                 {/* WIDGET KYC */}
                 <div className="card w-full shadow-sm hover:shadow-card transition-shadow">

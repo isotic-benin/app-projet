@@ -57,8 +57,16 @@ export const authOptions: NextAuthOptions = {
                 // Verify password using bcryptjs
                 let valid = false;
                 try {
-                    const bcrypt = require('bcryptjs');
-                    valid = await bcrypt.compare(credentials.password, user.passwordHash);
+                    const stored: string = user.passwordHash || '';
+                    // Supporte à la fois les hashes bcrypt (legacy) et scrypt (salt:hash) du seed
+                    if (stored.includes(':')) {
+                        const [salt, hash] = stored.split(':');
+                        const derived = crypto.scryptSync(credentials.password, salt, 64).toString('hex');
+                        valid = derived === hash;
+                    } else {
+                        const bcrypt = require('bcryptjs');
+                        valid = await bcrypt.compare(credentials.password, stored);
+                    }
                 } catch {
                     return null;
                 }
@@ -101,8 +109,15 @@ export const authOptions: NextAuthOptions = {
 
                 let valid = false;
                 try {
-                    const bcrypt = require('bcryptjs');
-                    valid = await bcrypt.compare(credentials.password, admin.passwordHash);
+                    const stored: string = admin.passwordHash || '';
+                    if (stored.includes(':')) {
+                        const [salt, hash] = stored.split(':');
+                        const derived = crypto.scryptSync(credentials.password, salt, 64).toString('hex');
+                        valid = derived === hash;
+                    } else {
+                        const bcrypt = require('bcryptjs');
+                        valid = await bcrypt.compare(credentials.password, stored);
+                    }
                 } catch {
                     return null;
                 }

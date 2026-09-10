@@ -168,22 +168,34 @@ export default async function AdminLoanDetails({ params }: { params: { id: strin
                     )}
 
                     {application.status === 'contract_signed' && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
-                            <h3 className="text-amber-800 font-bold mb-3 flex items-center gap-2">
-                                <HandCoins className="w-5 h-5" />
-                                Contrat signé reçu — Garantie à verser
-                            </h3>
-                            <p className="text-sm text-amber-900/70 mb-4">
-                                Le client a déposé son contrat signé. Invitez-le au dépôt de la garantie de {displayGuarantee} € (10% du montant, mentionnée dans le contrat) via une notification. Le déblocage des fonds ne sera possible qu'une fois la garantie versée.
-                            </p>
-                            {application.guaranteeDeposit?.invitedAt ? (
-                                <div className="flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 inline-flex">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Invitation envoyée le {new Date(application.guaranteeDeposit.invitedAt).toLocaleDateString('fr-FR')}
-                                </div>
-                            ) : (
-                                <InviteGuaranteeButton applicationId={application._id.toString()} />
-                            )}
+                        <div className="space-y-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                                <h3 className="text-amber-800 font-bold mb-3 flex items-center gap-2">
+                                    <FileSignature className="w-5 h-5" />
+                                    Contrat signé reçu — Prêt à débloquer
+                                </h3>
+                                <p className="text-sm text-amber-900/70 mb-4">
+                                    Le client a déposé son contrat signé. Vous pouvez maintenant débloquer les fonds : le montant de {displayAmount} € sera crédité instantanément sur son portefeuille (carte « Mon portefeuille » de son tableau de bord).
+                                </p>
+                                <DisburseButton applicationId={application._id.toString()} />
+                            </div>
+                            <div className="bg-white border border-border rounded-2xl p-5">
+                                <h4 className="text-sm font-bold text-navy mb-2 flex items-center gap-2">
+                                    <HandCoins className="w-4 h-4 text-gray-500" />
+                                    Garantie (optionnel)
+                                </h4>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Invitez le client à verser la garantie de {displayGuarantee} € si vous souhaitez l'exiger avant le retrait des fonds.
+                                </p>
+                                {application.guaranteeDeposit?.invitedAt ? (
+                                    <div className="flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 inline-flex">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Invitation envoyée le {new Date(application.guaranteeDeposit.invitedAt).toLocaleDateString('fr-FR')}
+                                    </div>
+                                ) : (
+                                    <InviteGuaranteeButton applicationId={application._id.toString()} />
+                                )}
+                            </div>
                         </div>
                     )}
 

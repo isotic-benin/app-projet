@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, AlertTriangle, Loader2, Smartphone } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Loader2, Building2 } from 'lucide-react';
 
 export default function GuaranteePaymentForm({
     applicationId,
@@ -72,9 +72,9 @@ export default function GuaranteePaymentForm({
             )}
 
             <div className="bg-surface rounded-xl p-4 border border-border flex items-center gap-3">
-                <Smartphone className="w-6 h-6 text-primary-500" />
+                <Building2 className="w-6 h-6 text-primary-500" />
                 <div>
-                    <p className="text-xs text-gray-500">Paiement par Mobile Money</p>
+                    <p className="text-xs text-gray-500">Paiement par virement bancaire</p>
                     <p className="font-bold text-navy">{guaranteeDisplay} €</p>
                 </div>
             </div>
@@ -90,12 +90,12 @@ export default function GuaranteePaymentForm({
                         Traitement...
                     </>
                 ) : (
-                    `Payer ${guaranteeDisplay} € par Mobile Money`
+                    `Payer ${guaranteeDisplay} € par virement bancaire`
                 )}
             </button>
 
-            <p className="text-xs text-gray-400 text-center">
-                Simulation de paiement — aucun débit réel ne sera effectué dans cette version de démonstration.
+            <p className="text-xs text-gray-500 text-center">
+                Paiement sécurisé par virement bancaire. Votre garantie sera vérifiée par notre équipe sous 24h ouvrées.
             </p>
         </div>
     );

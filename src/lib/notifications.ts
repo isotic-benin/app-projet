@@ -35,6 +35,7 @@ export const NOTIFICATION_TYPES = {
     GUARANTEE_INVITE: 'guarantee_invite',
     GUARANTEE_PAID: 'guarantee_paid',
     LOAN_DISBURSED: 'loan_disbursed',
+    WITHDRAWAL_SUBMITTED: 'withdrawal_submitted',
     WITHDRAWAL_VALIDATED: 'withdrawal_validated',
     WITHDRAWAL_REJECTED: 'withdrawal_rejected',
 } as const;

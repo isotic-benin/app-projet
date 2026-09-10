@@ -69,7 +69,7 @@ export default async function ClientRepaymentSchedulePage({ params }: { params: 
                             </div>
                         </div>
                         <p className="text-xs text-gray-500 mt-3 border-t border-amber-200 pt-2">
-                            Le règlement de vos échéances s'effectue auprès de notre équipe (virement ou Mobile Money). Consultez votre contrat pour les modalités.
+                            Le règlement de vos échéances s'effectue par virement bancaire auprès de notre équipe. Consultez votre contrat pour les modalités.
                         </p>
                     </div>
                 ) : (

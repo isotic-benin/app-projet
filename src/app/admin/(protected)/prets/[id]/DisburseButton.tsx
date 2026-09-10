@@ -8,7 +8,7 @@ export default function DisburseButton({ applicationId }: { applicationId: strin
     const router = useRouter();
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [method, setMethod] = useState('bank_transfer');
+    const method = 'bank_transfer';
 
     const handleDisburse = async () => {
         setIsProcessing(true);
@@ -39,14 +39,9 @@ export default function DisburseButton({ applicationId }: { applicationId: strin
                 </div>
             )}
             <div className="flex gap-4 items-center">
-                <select
-                    value={method}
-                    onChange={e => setMethod(e.target.value)}
-                    className="bg-navy-700 border border-white/20 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 flex-1"
-                >
-                    <option value="bank_transfer">Virement Bancaire (Réseau)</option>
-                    <option value="mobile_money">Mobile Money (API simulée)</option>
-                </select>
+                <div className="flex-1 bg-navy-700 border border-white/20 text-white text-sm rounded-xl px-4 py-3 flex items-center gap-2">
+                    <span>🏦</span> Virement bancaire
+                </div>
                 <button
                     onClick={handleDisburse}
                     disabled={isProcessing}

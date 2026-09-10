@@ -123,7 +123,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
                                             {(tx.amount / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                                         </td>
                                         <td className="px-6 py-4 text-navy">
-                                            {tx.method === 'mobile_money' ? 'Mobile Money' : 'Virement bancaire'}
+                                            Virement bancaire
                                         </td>
                                         <td className="px-6 py-4 font-mono text-xs text-gray-600">{tx.reference || '—'}</td>
                                         <td className="px-6 py-4 text-right">

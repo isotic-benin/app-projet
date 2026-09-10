@@ -78,7 +78,7 @@ export async function POST(req: Request) {
             type: 'guarantee_deposit',
             amount: guaranteeRequired,
             status: 'completed',
-            method: useBalance ? 'from_balance' : 'simulation',
+            method: useBalance ? 'from_balance' : 'bank_transfer',
             createdAt: new Date(),
         });
 
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
             action: AUDIT_ACTIONS.GUARANTEE_DEPOSIT_SUBMITTED,
             targetType: 'loan_application',
             targetId: appId,
-            metadata: { amount: guaranteeRequired, transactionId: txResult.insertedId, method: useBalance ? 'from_balance' : 'simulation' },
+            metadata: { amount: guaranteeRequired, transactionId: txResult.insertedId, method: useBalance ? 'from_balance' : 'bank_transfer' },
         });
 
         return NextResponse.json({ success: true });

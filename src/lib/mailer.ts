@@ -319,7 +319,7 @@ export async function sendLoanContractEmail({
       <h2 style="font-size: 16px; margin: 24px 0 12px 0; border-bottom: 2px solid #E6007E; padding-bottom: 6px;">4. Votre accord</h2>
       <p style="font-size: 14px; line-height: 1.7; color: #0B1B33;">Pour accepter cette offre et débloquer vos fonds :</p>
       <ol style="font-size: 14px; line-height: 1.9; color: #0B1B33; padding-left: 20px;">
-        <li>Versez le dépôt de garantie de <strong>${formatEuro(guarantee)}</strong> et les frais d'étude de <strong>${formatEuro(studyFee)}</strong> sur le compte indiqué par notre équipe (virement ou Mobile Money).</li>
+        <li>Versez le dépôt de garantie de <strong>${formatEuro(guarantee)}</strong> et les frais d'étude de <strong>${formatEuro(studyFee)}</strong> sur le compte bancaire indiqué par notre équipe (virement bancaire).</li>
         <li>Répondez à cet email en confirmant votre accord sur les conditions du présent contrat.</li>
         <li>Notre équipe validera votre versement et procédera au décaissement sous 48-72h.</li>
       </ol>

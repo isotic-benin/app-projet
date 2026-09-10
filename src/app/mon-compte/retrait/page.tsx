@@ -38,7 +38,7 @@ export default async function RetraitPage() {
                                         -{(tx.amount / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                        {tx.method === 'mobile_money' ? 'Mobile Money' : 'Virement bancaire'} · {tx.reference || ''}
+                                        Virement bancaire · {tx.reference || ''}
                                     </p>
                                 </div>
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${tx.status === 'validated' ? 'bg-green-100 text-green-700' :

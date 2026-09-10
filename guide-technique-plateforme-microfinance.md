@@ -185,7 +185,7 @@ Toutes les collections ci-dessous, avec les champs, types, contraintes et index 
   type: "initial_deposit" | "guarantee_deposit" | "disbursement" | "repayment" | "fee" | "refund",
   amount: number,                // unité mineure
   currency: string,
-  method: "bank_transfer" | "mobile_money" | "cash_agency" | "card",
+  method: "bank_transfer",
   proof: {
     fileUrl: string | null,      // justificatif uploadé par le client
     uploadedAt: Date | null,
@@ -304,7 +304,7 @@ Toutes les collections ci-dessous, avec les champs, types, contraintes et index 
   disbursement: {
     disbursedAt: Date | null,
     disbursedBy: ObjectId | null,
-    method: "bank_transfer" | "mobile_money" | "cash_agency" | null,
+    method: "bank_transfer" | null,
     transactionId: ObjectId | null,
   },
 
@@ -469,7 +469,7 @@ Toute transition doit :
 
 ### 5.3 Dépôt initial obligatoire de 100 €
 1. Une fois le KYC validé, le client accède à `/mon-compte/depot-initial`.
-2. La page affiche : montant requis (`settings.initial_deposit_amount`), moyens de paiement acceptés (virement bancaire avec référence unique **ou** mobile money selon votre configuration), et un formulaire d'upload de preuve de paiement.
+2. La page affiche : montant requis (`settings.initial_deposit_amount`), moyen de paiement accepté (virement bancaire avec référence unique), et un formulaire d'upload de preuve de paiement.
 3. Le client effectue le virement/dépôt en dehors de la plateforme (ou via une intégration de paiement si vous en ajoutez une plus tard), puis uploade la preuve : `POST /api/accounts/initial-deposit`.
 4. Une `transaction` de type `initial_deposit` est créée avec `status = "submitted"`, `account.initialDeposit.status = "submitted"`.
 5. **Admin** vérifie et valide (§6.3) → `transaction.status = "validated"`, `account.balance += 100`, `account.status = "active"`, `account.initialDeposit.status = "validated"`.
@@ -490,11 +490,11 @@ Toute transition doit :
 (voir §6.4 pour le détail du côté admin)
 - Si `additional_info_requested` : le client reçoit un email avec la demande précise, et peut re-soumettre des documents/informations via `/prets/[id]/complement`.
 - Si `rejected` : email de refus avec motif (générique ou personnalisé), dossier clôturé.
-- Si `approved` : le système calcule automatiquement `guaranteeDeposit.requiredAmount = approvedAmount * 10%` et `dueDate = decidedAt + 14 jours`, statut → `awaiting_guarantee_deposit`. Email envoyé avec : montant exact à verser, moyens de paiement, date limite, instructions d'upload de preuve.
+- Si `approved` : le système calcule automatiquement `guaranteeDeposit.requiredAmount = approvedAmount * 10%` et `dueDate = decidedAt + 14 jours`, statut → `awaiting_guarantee_deposit`. Email envoyé avec : montant exact à verser, moyen de paiement (virement bancaire), date limite, instructions d'upload de preuve.
 
 ### 5.6 Versement du dépôt de garantie (10 %)
 1. Le client voit sur `/prets/[id]` un bandeau avec compte à rebours jusqu'à `dueDate`.
-2. Il effectue le versement (virement/mobile money) et uploade la preuve : `POST /api/loans/[id]/guarantee-deposit`.
+2. Il effectue le versement par virement bancaire et uploade la preuve : `POST /api/loans/[id]/guarantee-deposit`.
 3. Création d'une `transaction` de type `guarantee_deposit`, `status = "submitted"`, `loanApplication.guaranteeDeposit.status = "submitted"`.
 4. **Admin** valide (§6.5) → `transaction.status = "validated"`, `guaranteeDeposit.status = "validated"`, statut du dossier → `guarantee_deposit_validated`.
 5. **Job cron quotidien** (`/api/cron/check-guarantee-deadlines`) : parcourt les dossiers `awaiting_guarantee_deposit` ou `guarantee_deposit_submitted` dont `dueDate < now` sans validation → statut → `expired`, email envoyé au client, entrée `auditLogs` (acteur = system).
@@ -544,7 +544,7 @@ Toute transition doit :
 
 ### 6.6 Décaissement
 - Bouton « Décaisser » visible uniquement quand `status = guarantee_deposit_validated`.
-- Formulaire : méthode de décaissement, référence de virement/mobile money.
+- Formulaire : décaissement par virement bancaire, référence de virement.
 - Déclenche génération de l'échéancier (`repaymentSchedules`) via la fonction d'amortissement (§9).
 
 ### 6.7 Suivi des remboursements

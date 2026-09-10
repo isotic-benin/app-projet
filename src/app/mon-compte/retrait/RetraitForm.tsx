@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wallet, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Wallet, Loader2, CheckCircle, AlertTriangle, User, CreditCard } from 'lucide-react';
+import { isValidRibOrIban, isValidBIC } from '@/lib/bank-validation';
 
 export default function RetraitForm({ balance }: { balance: number }) {
     const router = useRouter();
     const [amount, setAmount] = useState('');
-    const [method, setMethod] = useState('mobile_money');
+    const method = 'bank_transfer';
     const [reference, setReference] = useState('');
+    const [accountHolder, setAccountHolder] = useState('');
+    const [bic, setBic] = useState('');
+    const [bankName, setBankName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -28,6 +32,19 @@ export default function RetraitForm({ balance }: { balance: number }) {
             setError('Le montant dépasse votre solde disponible.');
             return;
         }
+        if (!accountHolder.trim() || accountHolder.trim().length < 2) {
+            setError('Veuillez renseigner le titulaire du compte.');
+            return;
+        }
+        const ribCheck = isValidRibOrIban(reference);
+        if (!ribCheck.valid) {
+            setError(ribCheck.error || 'IBAN / RIB invalide.');
+            return;
+        }
+        if (bic.trim() && !isValidBIC(bic)) {
+            setError('BIC invalide — 8 ou 11 caractères (ex: AGRIFRPP).');
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -37,7 +54,10 @@ export default function RetraitForm({ balance }: { balance: number }) {
                 body: JSON.stringify({
                     amount: parsed,
                     method,
-                    reference,
+                    iban: reference.trim(),
+                    bic: bic.trim() || undefined,
+                    accountHolder: accountHolder.trim(),
+                    bankName: bankName.trim() || undefined,
                 }),
             });
 
@@ -48,7 +68,7 @@ export default function RetraitForm({ balance }: { balance: number }) {
 
             setSuccess(true);
             setAmount('');
-            setReference('');
+            // garder les infos bancaires pour réutilisation
             setTimeout(() => router.refresh(), 1200);
         } catch (err: any) {
             setError(err.message);
@@ -102,37 +122,68 @@ export default function RetraitForm({ balance }: { balance: number }) {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-bold text-navy mb-1.5">Mode de réception</label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setMethod('mobile_money')}
-                                className={`py-3 rounded-xl border-2 text-sm font-bold transition-colors ${method === 'mobile_money' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-border bg-surface text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                Mobile Money
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMethod('bank_transfer')}
-                                className={`py-3 rounded-xl border-2 text-sm font-bold transition-colors ${method === 'bank_transfer' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-border bg-surface text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                Virement bancaire
-                            </button>
+                    <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-primary-200 flex items-center justify-center shrink-0">🏦</div>
+                        <div>
+                            <p className="text-sm font-bold text-primary-700">Virement bancaire</p>
+                            <p className="text-xs text-gray-500">Seul mode de paiement disponible — versement sur votre compte bancaire.</p>
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-navy mb-1.5">
-                            {method === 'mobile_money' ? 'Numéro Mobile Money' : 'IBAN / coordonnées bancaires'}
+                            Titulaire du compte <span className="text-red-500">*</span>
                         </label>
-                        <input
-                            type="text"
-                            value={reference}
-                            onChange={(e) => setReference(e.target.value)}
-                            placeholder={method === 'mobile_money' ? 'Ex: +229 01 23 45 67 89' : 'Ex: BJ23 0000 0000 0000 0000'}
-                            className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
-                        />
+                        <div className="relative">
+                            <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={accountHolder}
+                                onChange={(e) => setAccountHolder(e.target.value)}
+                                placeholder="Ex: Jean Dupont"
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-navy mb-1.5">
+                            IBAN / RIB <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <CreditCard className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={reference}
+                                onChange={(e) => setReference(e.target.value.toUpperCase())}
+                                placeholder="Ex: FR76 3000 2005 5000 0015 7840 Z25"
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                            />
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-1">Vérification automatique de la clé RIB/IBAN.</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-bold text-navy mb-1.5">BIC (optionnel)</label>
+                            <input
+                                type="text"
+                                value={bic}
+                                onChange={(e) => setBic(e.target.value.toUpperCase())}
+                                placeholder="AGRIFRPP"
+                                className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-navy mb-1.5">Banque (optionnel)</label>
+                            <input
+                                type="text"
+                                value={bankName}
+                                onChange={(e) => setBankName(e.target.value)}
+                                placeholder="Ex: BNP"
+                                className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                            />
+                        </div>
                     </div>
 
                     <button

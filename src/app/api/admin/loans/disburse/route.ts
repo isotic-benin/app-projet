@@ -71,8 +71,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 });
         }
 
-        if (application.status !== 'guarantee_paid') {
-            return NextResponse.json({ error: 'Impossible de débloquer : le client doit d\'abord verser la garantie (10% du montant).' }, { status: 400 });
+        const allowedDisburseStatuses = ['guarantee_paid', 'contract_signed'];
+        if (!allowedDisburseStatuses.includes(application.status)) {
+            return NextResponse.json({ error: 'Impossible de débloquer : le contrat doit être signé par le client.' }, { status: 400 });
+        }
+        if (!application.contract?.signed) {
+            return NextResponse.json({ error: 'Le contrat signé du client est requis avant le déblocage.' }, { status: 400 });
         }
 
         const adminId = new ObjectId(session.user.id);
