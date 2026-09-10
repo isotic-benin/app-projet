@@ -100,15 +100,19 @@ export async function POST(req: Request) {
         const now = new Date();
 
         // Transition atomique : ne passe à disbursed que si status est encore guarantee_paid
+        // Fix : disbursement peut être null → on écrase l'objet complet au lieu de faire 'disbursement.xxx' sur null
         const atomicUpdate = await db.collection(COLLECTIONS.LOAN_APPLICATIONS).findOneAndUpdate(
             { _id: appId, status: 'guarantee_paid', 'guaranteeDeposit.status': 'paid' },
             {
                 $set: {
                     status: 'disbursed',
-                    'disbursement.disbursedAt': now,
-                    'disbursement.disbursedBy': adminId,
-                    'disbursement.method': method,
-                    'disbursement.creditedToWallet': true,
+                    disbursement: {
+                        disbursedAt: now,
+                        disbursedBy: adminId,
+                        method,
+                        creditedToWallet: true,
+                        transactionId: null,
+                    },
                     updatedAt: now,
                 },
                 $push: {
