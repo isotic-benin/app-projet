@@ -23,7 +23,7 @@ export default function MentionsLegalesPage() {
                 <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-border prose prose-navy lg:prose-lg max-w-none text-gray-700 w-full">
                     <h2 className="text-navy font-bold text-2xl border-b border-border pb-2 mt-0">1. Éditeur du site</h2>
                     <p className="mb-8">
-                        Le site Altia Finance est édité par la société <strong>Altia Finance SARL</strong> (Entreprise fictive destinée à la démonstration de la plateforme logicielle).<br />
+                        Le site Altia Finance est édité par la société <strong>Altia Finance SARL</strong> (Entreprise de microfinance).<br />
                         Capital social : 50 000 000  €<br />
                         Siège social : Paris, France<br />
                         Contact : <a href="mailto:contact@altiafinance.com" className="text-primary-500 font-semibold hover:underline">contact@altiafinance.com</a>
